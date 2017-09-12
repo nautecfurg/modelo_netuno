@@ -69,9 +69,9 @@ def applyTurbidity(images, depths, c, binf, ranges):
     ranges_tf = tf.convert_to_tensor(ranges, dtype=tf.float32)
     binf_tf = tf.convert_to_tensor(binf, dtype=tf.float32)
  
-    c_tf = tf.slice(c_tf, begin=[0, 0, 0, 0], size=(batch_size, -1, -1, -1))
-    ranges_tf = tf.slice(ranges_tf, begin=[0, 0, 0, 0], size=(batch_size, -1, -1, -1))
-    binf_tf = tf.slice(binf_tf, begin=[0, 0, 0, 0], size=(batch_size, -1, -1, -1))
+    c_tf = c_tf[:batch_size,:,:,:]
+    ranges_tf = ranges_tf[:batch_size,:,:,:]
+    binf_tf = binf_tf[:batch_size,:,:,:]
 
     trans = tf.exp(-depths*c_tf*ranges_tf)
     return images*trans + binf_tf *(1-trans)
