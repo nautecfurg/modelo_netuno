@@ -41,7 +41,7 @@ class ArchitectureDepthTest(architecture.Architecture):
         pool3 = tf.contrib.layers.max_pool2d(inputs=conv3, kernel_size=[2, 2], stride=1,
                                              padding='SAME') #pooling e upsampling
 
-        linear_combination = tf.contrib.layers.conv2d(inputs=pool2, num_outputs=3,
+        linear_combination = tf.contrib.layers.conv2d(inputs=pool3, num_outputs=3,
                                                       kernel_size=[1, 1],
                                                       stride=[1, 1], padding='SAME',
                                                       normalizer_fn=tf.contrib.layers.batch_norm,
@@ -62,15 +62,15 @@ class ArchitectureDepthTest(architecture.Architecture):
         concatenation = tf.concat([pool4, linear_combination], 3)
 
         conv5 = tf.contrib.layers.conv2d(inputs=concatenation, num_outputs=5, kernel_size=[5, 5],
-                                         stride=[1, 1], padding='SAME', 
+                                         stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
-                                         normalizer_params =normalizer_params,
+                                         normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
 
         pool5 = tf.contrib.layers.max_pool2d(inputs=conv5, kernel_size=[2, 2], stride=1,
                                              padding='SAME') #pooling e upsampling
 
-        conv6 = tf.contrib.layers.conv2d(inputs=pool4, num_outputs=10, kernel_size=[3, 3],
+        conv6 = tf.contrib.layers.conv2d(inputs=pool5, num_outputs=10, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
