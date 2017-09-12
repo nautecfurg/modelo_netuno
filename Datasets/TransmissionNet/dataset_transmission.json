@@ -1,0 +1,26 @@
+{
+    "train_path": "Datasets/Data/nyu/tfrecords/train/",
+    "test_path": "Datasets/Data/nyu/tfrecords/test/",
+    "batch_size": 256,
+    "num_epochs": 128,
+    "num_threads": 2,
+    "input_size": [
+        224,
+        224,
+        3
+    ],
+    "patch_size": [
+        16,
+        16,
+        3
+    ],
+    "output_size": [
+        224,
+        224,
+        1
+    ],
+    "turbidity_path": "Datasets/Data/TurbidityAzul",
+    "turbidity_size": [128, 128],
+    "trans_minval": 0.05,
+    "trans_maxval": 1
+}

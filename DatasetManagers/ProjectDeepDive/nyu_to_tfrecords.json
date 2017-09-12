@@ -1,0 +1,14 @@
+{
+    "tf_records_train_filename": "Datasets/Data/nyu/tfrecords/train/nyu_test.tfrecords",
+    "tf_records_validation_filename": "Datasets/Data/nyu/tfrecords/test/nyu_test.tfrecords",
+    "mat_filename": "Datasets/Data/nyu - labeled/nyu_depth_v2_labeled.mat",
+    "train_proportion": 0.9,
+    "crop_dimension": [
+        224,
+        224
+    ],
+    "initial_point": [
+        18,
+        18
+    ]
+}
