@@ -149,6 +149,17 @@ def check_needed_parameters(parameter_values):
                   parameter_values["execution_mode"]+" mode.")
             sys.exit(2)
 
+def create_tensorboard_command(train_dir, test_dir):
+    """This function creates a command that can be executed in the terminal 
+    to run tensorboard in the current training and test directories
+    Args:
+        train_dir: String with the path to the training summaries
+        test_dir: String with the path to the test summaries"""
+
+    train_string="train:"+os.path.abspath(train_dir)
+    test_string="test:"+os.path.abspath(test_dir)
+    return "tensorboard --logdir=\""+train_string+", "+test_string+"\""
+
 def training(loss_op, optimizer_imp):
     """Sets up the training Ops.
 
@@ -167,7 +178,7 @@ def training(loss_op, optimizer_imp):
     # Get variable list
     model_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")
     # Add a scalar summary for the snapshot loss.
-    tf.summary.scalar('loss', loss_op)
+    tf.summary.scalar('train_loss', loss_op)
     # Create a variable to track the global step.
     global_step = tf.Variable(0, name='global_step', trainable=False)
     # Use the optimizer to apply the gradients that minimize the loss
@@ -246,11 +257,13 @@ def run_training(opt_values):
                                                                    training=False) # TODO: false?
         loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
-        test_loss = tf.summary.scalar('loss', tf_test_loss)
+        test_loss = tf.summary.scalar('test_loss', tf_test_loss)
 
 
-        train_writer = tf.summary.FileWriter(summary_dir + '/Train')
-        test_writer = tf.summary.FileWriter(summary_dir + '/Test')
+        train_summary_dir=os.path.join(summary_dir, "Train")
+        test_summary_dir=os.path.join(summary_dir, "Test")
+        train_writer = tf.summary.FileWriter(train_summary_dir)
+        test_writer = tf.summary.FileWriter(test_summary_dir)
         # # The op for initializing the variables.
         init_op = tf.group(tf.global_variables_initializer(),
                            tf.local_variables_initializer())
@@ -262,6 +275,9 @@ def run_training(opt_values):
         # epoch counter).
         sess.run(init_op)
         sess.run(init)
+        tensorboard_command=create_tensorboard_command(train_summary_dir, test_summary_dir)
+        print("To run tensorboard, execute the following command in the terminal:")
+        print(tensorboard_command)
 
         if execution_mode == "restore":
             # Restore variables from disk.
