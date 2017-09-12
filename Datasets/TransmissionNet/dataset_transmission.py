@@ -46,14 +46,21 @@ class DatasetTransmission(dataset.Dataset):
 
     def _parse_function(self, record):
         features = {"image_raw": tf.FixedLenFeature((), tf.string),}
-                    
+
         parsed_features = tf.parse_single_example(record, features)
         image = tf.decode_raw(parsed_features['image_raw'], tf.uint8)
         image.set_shape([self.input_size_prod])
         image = tf.cast(image, tf.float32) * (1. / 255)
         image = tf.reshape(image, self.input_size)
-        # depth = tf.cast(depth, tf.float32)
-        return image
+
+        size_x = self.config_dict['patch_size'][0]
+        size_y = self.config_dict['patch_size'][1]
+        offset_x = random.randint(0, self.input_size[0] - size_x - 1)
+        offset_y = random.randint(0, self.input_size[1] - size_y - 1)
+
+        image = image[offset_x:offset_x + size_x, offset_y:offset_y+size_y]
+        transmission = self.random_transmissions(1)
+        return image, transmission
 
     def random_transmissions(self, batch_size):
         minval = self.config_dict["trans_minval"]
@@ -86,15 +93,8 @@ class DatasetTransmission(dataset.Dataset):
 
         iterator = dataset.make_one_shot_iterator()
 
-        images = iterator.get_next()
+        images, transmissions = iterator.get_next()
 
-        size_x = self.config_dict['patch_size'][0]
-        size_y = self.config_dict['patch_size'][1]
-        offset_x = random.randint(0, self.input_size[0] - size_x - 1)
-        offset_y = random.randint(0, self.input_size[0] - size_y - 1)
-
-        images = images[:, offset_x:offset_x + size_x, offset_y:offset_y+size_y]
-        transmissions = self.random_transmissions(self.batch_size)
         images = simulator.applyTurbidityTransmission(images, self.binf, transmissions)
         tf.summary.image("image", images)
         return images, transmissions
@@ -116,18 +116,8 @@ class DatasetTransmission(dataset.Dataset):
         iterator = dataset.make_initializable_iterator()
         initializer = iterator.initializer
 
-        images = iterator.get_next()
+        images, transmissions = iterator.get_next()
 
-        size_x = self.config_dict['patch_size'][0]
-        size_y = self.config_dict['patch_size'][1]
-        offset_x = random.randint(0, self.input_size[0] - size_x - 1)
-        offset_y = random.randint(0, self.input_size[0] - size_y - 1)
-
-        images = images[:, offset_x:offset_x + size_x, offset_y:offset_y+size_y]
-        # depths = tf.reshape(depths, [self.batch_size] + self.output_size)
-        # images = tf.reshape(images, [self.batch_size] + self.input_size)
-
-        transmissions = self.random_transmissions(self.batch_size)
         images = simulator.applyTurbidityTransmission(images, self.binf, transmissions)
         tf.summary.image("image", images)
         return images, transmissions, initializer
