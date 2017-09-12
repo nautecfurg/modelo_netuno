@@ -44,6 +44,8 @@ def acquireProperties(turbidity_path, turbidity_size, batch_size, range_min, ran
     for i in range(batch_size):
         range_array[i] = range_values[int((i/(batch_size/t_batch_size))) % t_batch_size]
     range_array = np.reshape(range_array, [batch_size, 1, 1, 1])
+
+
     return c, binf, range_array
 
 
@@ -61,5 +63,15 @@ def _acquireProperties(turbidity_patches):
     return c, binf
 
 def applyTurbidity(images, depths, c, binf, ranges):
-    trans = tf.exp(-depths*c*ranges)
-    return images*trans + binf *(1-trans)
+    batch_size = tf.shape(depths,out_type=tf.int32)[0]
+ 
+    c_tf = tf.convert_to_tensor(c, dtype=tf.float32)
+    ranges_tf = tf.convert_to_tensor(ranges, dtype=tf.float32)
+    binf_tf = tf.convert_to_tensor(binf, dtype=tf.float32)
+ 
+    c_tf = tf.slice(c_tf, begin=[0, 0, 0, 0], size=(batch_size, -1, -1, -1))
+    ranges_tf = tf.slice(ranges_tf, begin=[0, 0, 0, 0], size=(batch_size, -1, -1, -1))
+    binf_tf = tf.slice(binf_tf, begin=[0, 0, 0, 0], size=(batch_size, -1, -1, -1))
+
+    trans = tf.exp(-depths*c_tf*ranges_tf)
+    return images*trans + binf_tf *(1-trans)
