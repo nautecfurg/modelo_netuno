@@ -47,7 +47,7 @@ class Mscnn(architecture.Architecture):
 
         upsamp3 = tf.image.resize_nearest_neighbor(pool3, self.input_size)    # upsampling
 
-        linear_combination = tf.contrib.layers.conv2d(inputs=upsamp3, num_outputs=3,
+        linear_combination = tf.contrib.layers.conv2d(inputs=upsamp3, num_outputs=1,
                                                       kernel_size=[1, 1],
                                                       stride=[1, 1], padding='SAME',
                                                       normalizer_fn=tf.contrib.layers.batch_norm,
@@ -91,7 +91,7 @@ class Mscnn(architecture.Architecture):
 
         upsamp6 = tf.image.resize_nearest_neighbor(pool6, self.input_size)    # upsampling
 
-        linear_combination2 = tf.contrib.layers.conv2d(inputs=upsamp6, num_outputs=3,
+        linear_combination2 = tf.contrib.layers.conv2d(inputs=upsamp6, num_outputs=1,
                                                        kernel_size=[1, 1], stride=[1, 1],
                                                        padding='SAME',
                                                        normalizer_fn=tf.contrib.layers.batch_norm,

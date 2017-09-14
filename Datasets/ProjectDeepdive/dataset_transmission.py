@@ -6,7 +6,7 @@ import Datasets.ProjectDeepdive.simulator as simulator
 
 import dataset
 
-class DatasetTurbid(dataset.Dataset):
+class DatasetTrans(dataset.Dataset):
     def __init__(self):
         parameters_list = ["train_path", "test_path", "input_size", "output_size", "turbidity_path",
                            "turbidity_size", "range_min", "range_max"]
@@ -64,12 +64,10 @@ class DatasetTurbid(dataset.Dataset):
         iterator = dataset.make_one_shot_iterator()
 
         images_gt, depths = iterator.get_next()
-        #depths = tf.reshape(depths, [None] + self.output_size)
-        #images = tf.reshape(images, [None] + self.input_size)
-        images = simulator.applyTurbidity(images_gt, depths, self.c, self.binf, self.range_array)
-        tf.summary.image("depth", depths)
+        images, transmissions = simulator.applyTurbidityGetTransmission(images_gt, depths, self.c, self.binf, self.range_array)
+        tf.summary.image("transmissions", transmissions)
         tf.summary.image("image", images)
-        return images, images_gt
+        return images, transmissions
 
 
     def next_batch_test(self):
@@ -91,10 +89,10 @@ class DatasetTurbid(dataset.Dataset):
         images_gt, depths = iterator.get_next()
         # depths = tf.reshape(depths, [self.batch_size] + self.output_size)
         # images = tf.reshape(images, [self.batch_size] + self.input_size)
-        images = simulator.applyTurbidity(images_gt, depths, self.c, self.binf, self.range_array)
-        tf.summary.image("image_gt", images_gt)
+        images, transmissions = simulator.applyTurbidityGetTransmission(images_gt, depths, self.c, self.binf, self.range_array)
+        tf.summary.image("transmission", transmissions)
         tf.summary.image("image", images)
-        return images, images_gt, initializer
+        return images, transmissions, initializer
 
     def get_num_samples(self, filename_list):
         num_samples = 0
