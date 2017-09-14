@@ -66,5 +66,10 @@ def applyTurbidity(images, depths, c, binf, ranges):
 
 def applyTurbidityTransmission(images, binf, trans):
     images_shape_len = len(images.shape.as_list())
-    trans = tf.reshape(trans, [trans.shape.as_list()[0]] + [1] * (images_shape_len - 1))
-    return images * trans + binf * (1-trans)
+    while len(trans.shape.as_list()) < images_shape_len:
+        trans = tf.expand_dims(trans, -1)
+
+    batch_size = tf.shape(images, out_type=tf.int32)[0]
+    binf_tf = tf.convert_to_tensor(binf, dtype=tf.float32)
+    binf_tf = binf_tf[:batch_size, :, :, :]
+    return images * trans + binf_tf * (1-trans)
