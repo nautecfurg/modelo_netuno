@@ -381,6 +381,7 @@ def log(opt_values, execution_dir): #maybe in another module?
     json_data["architecture_name"] = architecture_name
     json_data["dataset_name"] = dataset_name
     json_data["loss_name"] = loss_name
+    json_data["optimizer_name"] = optimizer_name
 
     log_dir = os.path.join(execution_dir, "Logs")
     if not os.path.isdir(log_dir):
