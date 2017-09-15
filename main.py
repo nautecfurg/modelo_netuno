@@ -358,10 +358,12 @@ def log(opt_values, execution_dir): #maybe in another module?
     architecture_name = opt_values['architecture_name']
     dataset_name = opt_values['dataset_name']
     loss_name = opt_values['loss_name']
+    optimizer_name = opt_values['optimizer_name']
     # Get implementations
     architecture_imp = utils.get_implementation(architecture.Architecture, architecture_name)
     dataset_imp = utils.get_implementation(dataset.Dataset, dataset_name)
     loss_imp = utils.get_implementation(loss.Loss, loss_name)
+    optimizer_imp = utils.get_implementation(optimizer.Optimizer, optimizer_name)
 
     today = time.strftime("%Y-%m-%d_%H:%M")
     log_name = dataset_name + "_" + architecture_name + "_" + loss_name + "_" +\
@@ -372,7 +374,9 @@ def log(opt_values, execution_dir): #maybe in another module?
     if hasattr(loss_imp, 'config_dict'):
         json_data["loss"] = loss_imp.config_dict
     if hasattr(dataset_imp, 'config_dict'):
-        json_data["architecture"] = dataset_imp.config_dict
+        json_data["dataset"] = dataset_imp.config_dict
+    if hasattr(optimizer_imp, 'config_dict'):
+        json_data["optimizer"] = optimizer_imp.config_dict
     json_data["execution_mode"] = opt_values['execution_mode']
     json_data["architecture_name"] = architecture_name
     json_data["dataset_name"] = dataset_name
