@@ -41,7 +41,7 @@ class Architecture(base.Base):
         pass
 
     def get_layer(self, layer_name):
-        """This method return a reference to a layer in the architecture.
+        """This method returns a reference to a layer in the architecture.
         It must be overridden if the user wishes to visualize the hidden
         layers of the network, but doesn't need to be implemented otherwise.
 
