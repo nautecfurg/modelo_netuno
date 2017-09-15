@@ -1,5 +1,5 @@
 import tensorflow as tf
-def guidedfilter_color(I, p, r, eps):
+def guidedfilter_color_treinable(I,p,r,eps):
     """
     Summary:
         This function is a implementation of guided filter for tensorflow.
@@ -16,10 +16,11 @@ def guidedfilter_color(I, p, r, eps):
 
     """
 
-
-    w_conv = tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, 1, 1])
-    ones = tf.ones( p.get_shape()[1:])  #gambiarra para fazer o guided em um batch variavel
-    ones = tf.expand_dims(ones, 0)
+    w_conv = tf.get_variable("W_conv_guided", shape=[2*r+1, 2*r+1, 1, 1])
+    # w_conv = tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, 1, 1])
+    eps_var = tf.get_variable("eps_guided", shape=[1, 1, 1, 1])
+    eps_tf = tf.maximum(eps_var,eps) 
+    ones = tf.ones(p.shape)
     N = tf.nn.conv2d(ones, w_conv, strides=[1, 1, 1, 1], padding='SAME')
     I_r = tf.expand_dims(I[:, :, :, 0], -1)
     I_g = tf.expand_dims(I[:, :, :, 1], -1)
@@ -58,9 +59,9 @@ def guidedfilter_color(I, p, r, eps):
     var_I_gb = tf.nn.conv2d(I_g*I_b, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_gb
     var_I_bb = tf.nn.conv2d(I_b*I_b, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_bb
 
-    sigma1 = tf.concat([var_I_rr+eps, var_I_rg, var_I_rb], 3)
-    sigma2 = tf.concat([var_I_rg, var_I_gg+eps, var_I_gb], 3)
-    sigma3 = tf.concat([var_I_rb, var_I_gb, var_I_bb+eps], 3)
+    sigma1 = tf.concat([var_I_rr+eps_tf, var_I_rg, var_I_rb], 3)
+    sigma2 = tf.concat([var_I_rg, var_I_gg+eps_tf, var_I_gb], 3)
+    sigma3 = tf.concat([var_I_rb, var_I_gb, var_I_bb+eps_tf], 3)
 
     sigma1 = tf.expand_dims(sigma1, -1)
     sigma2 = tf.expand_dims(sigma2, -1)
