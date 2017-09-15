@@ -4,16 +4,6 @@
         224,
         3
     ],
-    "output_size": [
-        224,
-        224,
-        3
-    ],
-    "depth_size": [
-        224,
-        224,
-        1
-    ],
     "summary_writing_period": 100,
     "validation_period": 300,
     "model_saving_period": 300,
