@@ -22,15 +22,16 @@ import Losses
 import optimizer
 import Optimizers
 import utils
+from visualization_utils import put_features_on_grid
 
 
 HELP_MSG = """usage: python main.py [-h] [-m MODE] [-a ARCHITECTURE] [-d DATASET]
-           [-g DATASET_MANAGER] [-l LOSS] [-o OPTIMIZER] [-e EVALUATE]
-           [-p EXECUTION_PATH] [--evaluate_path EVALUATE_PATH]
+           [-g DATASET_MANAGER] [-l LOSS] [-o OPTIMIZER] [-e EVALUATE] [-p EXECUTION_PATH]
+           [--evaluate_path EVALUATE_PATH] [--visualize_keys "KEY1;KEY2;...;KEYN"]
 optional arguments
     -h, --help                              show this help message and exit
     -m, --mode MODE                         specifies one of the possible modes (train,
-                                            evaluate, restore, dataset_manage)
+                                            evaluate, restore, dataset_manage, visualize)
     -a, --architecture ARCHITECTURE         specifies an architecture it is required in all
                                             modes except for dataset_manage
     -d, --dataset DATASET                   specifies one dataset implementation it is
@@ -47,7 +48,9 @@ optional arguments
     --evaluate_path EVALUATE_PATH           specifies the folder were the exemples to be evaluated
                                             are located
     -p, --execution_path EXECUTION_PATH     specifies an execution path and it is required
-                                            only in restore mode
+                                            only in restore and visualize modes
+    --visualize_keys "KEY1;KEY2;...;KEYN"   a list of layers to be visualized, used only
+                                            in visualize mode
 """
 
 
@@ -66,8 +69,8 @@ def process_args(argv):
     try:
         long_opts = ["help", "architecture=", "dataset=",
                      "dataset_manager=", "loss=", "execution_path=",
-                     "optimizer=", "evaluate_path=", "evaluate="]
-        opts, _ = getopt.getopt(argv, "ha:d:m:g:l:p:o:e:", long_opts)
+                     "optimizer=", "evaluate_path=", "evaluate=", "visualize_keys="]
+        opts, _ = getopt.getopt(argv, "ha:d:m:g:l:p:o:e", long_opts)
         if opts == []:
             print(HELP_MSG)
             sys.exit(2)
@@ -80,7 +83,7 @@ def process_args(argv):
             print(HELP_MSG)
             sys.exit()
         elif opt in ("-m", "--mode"):
-            if arg in ('train', 'evaluate', 'restore', 'dataset_manage'):
+            if arg in ('train', 'evaluate', 'restore', 'dataset_manage', 'visualize'):
                 opt_values['execution_mode'] = arg
             else:
                 print(arg + 'is not a possible execution mode')
@@ -114,6 +117,9 @@ def process_args(argv):
         elif opt in ("-o", "--optimizer"):
             opt_values['optimizer_name'] = \
                         utils.arg_validation(arg, optimizer.Optimizer)
+        elif opt == "--visualize_keys":
+            opt_values['visualize_keys'] = arg
+
 
     check_needed_parameters(opt_values)
     return opt_values
@@ -138,6 +144,9 @@ def check_needed_parameters(parameter_values):
                              "evaluate_name"]
     elif parameter_values["execution_mode"] == "dataset_manage":
         needed_parameters = ["dataset_manager_name"]
+    elif parameter_values["execution_mode"] == "visualize":
+        needed_parameters = ["architecture_name", "dataset_name", "execution_path",
+                             "visualize_keys"]
 
     else:
         print("Parameters list must contain an execution_mode.")
@@ -149,16 +158,19 @@ def check_needed_parameters(parameter_values):
                   parameter_values["execution_mode"]+" mode.")
             sys.exit(2)
 
-def create_tensorboard_command(train_dir, test_dir):
+def get_tensorboard_command(train=None, test=None, visualize=None):
     """This function creates a command that can be executed in the terminal 
     to run tensorboard in the current training and test directories
     Args:
         train_dir: String with the path to the training summaries
         test_dir: String with the path to the test summaries"""
 
-    train_string="train:"+os.path.abspath(train_dir)
-    test_string="test:"+os.path.abspath(test_dir)
-    return "tensorboard --logdir=\""+train_string+", "+test_string+"\""
+    if (train is not None) and (test is not None):
+        train_string="train:"+os.path.abspath(train)
+        test_string="test:"+os.path.abspath(test)
+        return "tensorboard --logdir=\""+train_string+", "+test_string+"\""
+    elif visualize is not None:
+        return "tensorboard --logdir=\"visualize:"+visualize+"\""
 
 def training(loss_op, optimizer_imp):
     """Sets up the training Ops.
@@ -207,6 +219,7 @@ def run_training(opt_values):
     optimizer_name = opt_values['optimizer_name']
 
     time_str = time.strftime("%Y-%m-%d_%H:%M")
+    
     if opt_values["execution_mode"] == "train":
         execution_dir = "Executions/" + dataset_name + "_" + arch_name + "_" + loss_name +\
                     "_" + time_str
@@ -275,9 +288,6 @@ def run_training(opt_values):
         # epoch counter).
         sess.run(init_op)
         sess.run(init)
-        tensorboard_command=create_tensorboard_command(train_summary_dir, test_summary_dir)
-        print("To run tensorboard, execute the following command in the terminal:")
-        print(tensorboard_command)
 
         if execution_mode == "restore":
             # Restore variables from disk.
@@ -285,6 +295,9 @@ def run_training(opt_values):
             saver.restore(sess, model_file_path)
             print("Model restored.")
 
+        tensorboard_command=get_tensorboard_command(train_summary_dir, test_summary_dir)
+        print("To run tensorboard, execute the following command in the terminal:")
+        print(tensorboard_command)
         step = sess.run(global_step)
 
         try:
@@ -405,8 +418,85 @@ def run_dataset_manager(opt_values):
     dataset_manager_imp = utils.get_implementation(dataset_manager.DatasetManager, dm_name)
     dataset_manager_imp.convert_data()
 
+def run_visualization(opt_values):
+    """
+    Runs the visualization
+
+    This function is responsible for instanciating dataset, architecture
+
+    Args:
+        opt_values: dictionary containing parameters as keys and arguments as values.
+
+    """
+    # Get architecture, dataset and loss name
+    arch_name = opt_values['architecture_name']
+    dataset_name = opt_values['dataset_name']
+    
+    execution_dir = opt_values["execution_path"]
+    model_dir = os.path.join(execution_dir, "Model")
+
+    summary_dir = os.path.join(execution_dir, "Summary")
+    if not os.path.isdir(summary_dir):
+        os.makedirs(summary_dir)
+
+    # Get implementations
+    architecture_imp = utils.get_implementation(architecture.Architecture, arch_name)
+    dataset_imp = utils.get_implementation(dataset.Dataset, dataset_name)
+
+    # Tell TensorFlow that the model will be built into the default Graph.
+    graph = tf.Graph()
+    with graph.as_default():
+        # Input and target output pairs.
+        architecture_input, target_output = dataset_imp.next_batch_train(0)
+
+        with tf.variable_scope("model"):
+            architecture_output = architecture_imp.prediction(architecture_input, training=True)
+
+        visualize_summary_dir=os.path.join(summary_dir, "Visualize")
+        visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
+
+        # # The op for initializing the variables.
+        init_op = tf.group(tf.global_variables_initializer(),
+                           tf.local_variables_initializer())
+        # Add ops to save and restore all the variables.
+        saver = tf.train.Saver()
+        # Add ops to save and restore all the variables.
+        sess = tf.Session()
+
+        # Initialize the variables (the trained variables and the
+        # epoch counter).
+        sess.run(init_op)
+
+        # Restore variables from disk.
+        model_file_path = os.path.join(model_dir, "model.ckpt")
+        saver.restore(sess, model_file_path)
+        print("Model restored.")
+
+        tensorboard_command=get_tensorboard_command(visualize=visualize_summary_dir)
+        print("To run tensorboard, execute the following command in the terminal:")
+        print(tensorboard_command)
+        step=0
+
+        layer_summaries=[]
+        key_list=opt_values['visualize_keys'].split(';')
+        for k in key_list:
+            layer_grid=put_features_on_grid(architecture_imp.get_layer(k))
+            layer_summaries.append(tf.summary.image(k, layer_grid, max_outputs=3))
+
+        try:
+
+            while True:
+                summaries = sess.run(layer_summaries)
+                for summary in summaries:
+                    visualize_writer.add_summary(summary, step)
+                step+=1
+        except tf.errors.OutOfRangeError:
+            print('Done visualizing, %d steps.' % (step))
+        finally:
+            sess.close()
 
 
+        
 
 def main(opt_values):
     """
@@ -419,6 +509,8 @@ def main(opt_values):
         run_evaluate(opt_values)
     elif execution_mode == 'dataset_manage':
         run_dataset_manager(opt_values)
+    elif execution_mode == 'visualize':
+        run_visualization(opt_values)
 
 if __name__ == "__main__":
     OPT_VALUES = process_args(sys.argv[1:])
