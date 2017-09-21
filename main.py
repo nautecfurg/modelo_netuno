@@ -481,7 +481,7 @@ def run_visualization(opt_values):
         key_list=opt_values['visualize_keys'].split(';')
         for k in key_list:
             layer_grid=put_features_on_grid(architecture_imp.get_layer(k))
-            layer_summaries.append(tf.summary.image(k, layer_grid, max_outputs=3))
+            layer_summaries.append(tf.summary.image(k, layer_grid, max_outputs=512))
 
         try:
 
