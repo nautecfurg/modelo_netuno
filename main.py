@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import itertools
 
 import numpy as np
 import tensorflow as tf
@@ -452,7 +453,7 @@ def run_visualization(opt_values):
         with tf.variable_scope("model"):
             architecture_output = architecture_imp.prediction(architecture_input, training=True)
 
-        visualize_summary_dir=os.path.join(summary_dir, "Visualize")
+        visualize_summary_dir=os.path.join(summary_dir, "Visualize_"+dataset_name)
         visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
 
         # # The op for initializing the variables.
@@ -478,22 +479,40 @@ def run_visualization(opt_values):
         step=0
 
         layer_summaries=[]
+        layer_avg_ops=[]
+        layer_avgs={}
+        json_name="average_activations.json"
+        json_file_path = os.path.join(visualize_summary_dir, json_name)
+        if os.path.isfile(json_file_path):
+            outfile= open(json_file_path,'r+')
+            layer_avgs=json.load(outfile)
+            outfile.close()
+
         key_list=opt_values['visualize_keys'].split(';')
         for k in key_list:
-            layer_grid=put_features_on_grid(architecture_imp.get_layer(k))
+            layer=architecture_imp.get_layer(k)           
+            layer_grid=put_features_on_grid(layer)
             layer_summaries.append(tf.summary.image(k, layer_grid, max_outputs=512))
+            layer_avgs[k]=[]
+            layer_avg_ops.append(tf.reduce_mean(layer,axis=(1,2)))
 
         try:
 
             while True:
                 summaries = sess.run(layer_summaries)
+                batch_avgs = sess.run(layer_avg_ops)
+                for k, avg in zip(key_list, batch_avgs):
+                    layer_avgs[k].extend(avg.tolist())
                 for summary in summaries:
                     visualize_writer.add_summary(summary, step)
                 step+=1
         except tf.errors.OutOfRangeError:
             print('Done visualizing, %d steps.' % (step))
         finally:
-            sess.close()
+            sess.close()                       
+            with open(json_file_path, 'w') as outfile:
+                json.dump(layer_avgs, outfile)
+            
 
 
         
