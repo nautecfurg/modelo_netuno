@@ -5,7 +5,6 @@ import json
 import os
 import sys
 import time
-import itertools
 
 import numpy as np
 import tensorflow as tf
