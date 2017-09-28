@@ -16,11 +16,12 @@ def guidedfilter_color_treinable(I,p,r,eps):
 
     """
 
-    w_conv = tf.get_variable("W_conv_guided", shape=[2*r+1, 2*r+1, 1, 1])
-    # w_conv = tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, 1, 1])
-    eps_var = tf.get_variable("eps_guided", shape=[1, 1, 1, 1])
+    w_conv = tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, 1, 1])
+    eps_var = tf.get_variable("eps_guided", shape=[1, 1, 1, 1],
+                              initializer=tf.constant_initializer(0.001))
     eps_tf = tf.maximum(eps_var,eps) 
-    ones = tf.ones(p.shape)
+    ones = tf.ones(p.get_shape()[1:])  #gambiarra para fazer o guided em um batch variavel
+    ones = tf.expand_dims(ones, 0)
     N = tf.nn.conv2d(ones, w_conv, strides=[1, 1, 1, 1], padding='SAME')
     I_r = tf.expand_dims(I[:, :, :, 0], -1)
     I_g = tf.expand_dims(I[:, :, :, 1], -1)
