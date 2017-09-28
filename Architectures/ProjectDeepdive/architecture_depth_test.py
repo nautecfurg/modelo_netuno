@@ -31,6 +31,7 @@ class ArchitectureDepthTest(architecture.Architecture):
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
+        self.layers_dict["conv2"]=conv2
 
         pool2 = tf.contrib.layers.max_pool2d(inputs=conv2, kernel_size=[2, 2], stride=1,
                                              padding='SAME') #pooling e upsampling
