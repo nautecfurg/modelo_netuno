@@ -8,7 +8,7 @@ class ArchitectureDepthTest(architecture.Architecture):
                            "validation_period", "model_saving_period"]
 
         self.config_dict = self.open_config(parameters_list)
-        self.layers_dict={}
+        self.layers_dict = {}
 
     def prediction(self, sample, training=False):
         " Coarse-scale Network"
