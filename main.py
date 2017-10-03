@@ -168,9 +168,9 @@ def get_tensorboard_command(train=None, test=None, visualize=None):
     if (train is not None) and (test is not None):
         train_string="train:"+os.path.abspath(train)
         test_string="test:"+os.path.abspath(test)
-        return "tensorboard --logdir=\""+train_string+", "+test_string+"\""
+        return "tensorboard --logdir "+train_string+","+test_string
     elif visualize is not None:
-        return "tensorboard --logdir=\"visualize:"+visualize+"\""
+        return "tensorboard --logdir visualize:"+visualize
 
 def training(loss_op, optimizer_imp):
     """Sets up the training Ops.
