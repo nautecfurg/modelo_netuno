@@ -16,9 +16,9 @@ def guidedfilter(I, p, r, eps):
 
     """
 
-    #weight_conv = deep_dive.weight_variable_scaling([17, 17, 64, 64], name='weight_conv'+base_name)
     weight_conv = tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, 1, 1])
-    ones = tf.ones(p.shape)
+    ones = tf.ones(p.get_shape()[1:])  #gambiarra para fazer o guided em um batch variavel
+    ones = tf.expand_dims(ones, 0)
     n = tf.nn.conv2d(ones, weight_conv, strides=[1, 1, 1, 1], padding='SAME')
     mean_i = tf.nn.conv2d(I, weight_conv, strides=[1, 1, 1, 1], padding='SAME')/n
     mean_p = tf.nn.conv2d(p, weight_conv, strides=[1, 1, 1, 1], padding='SAME')/n

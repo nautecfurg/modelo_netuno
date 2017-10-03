@@ -1,14 +1,14 @@
 import architecture
 import tensorflow as tf
+import Architectures.Layers.guidedfilter_color_trainable as gct
 
-class ArchitectureDepthTest(architecture.Architecture):
+class MscnnGuidedColorTreinable(architecture.Architecture):
     def __init__(self):
-        parameters_list = ['input_size', 'output_size',
-                           'depth_size', 'summary_writing_period',
+        parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]
 
         self.config_dict = self.open_config(parameters_list)
-        self.layers_dict={}
+        self.input_size = self.config_dict["input_size"][0:2]
 
     def prediction(self, sample, training=False):
         " Coarse-scale Network"
@@ -19,42 +19,41 @@ class ArchitectureDepthTest(architecture.Architecture):
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        self.layers_dict["conv1"]=conv1
 
-        pool1 = tf.contrib.layers.max_pool2d(inputs=conv1, kernel_size=[2, 2], stride=1,
-                                             padding='SAME') #pooling e upsampling
-        self.layers_dict["pool1"]=pool1
+        pool1 = tf.contrib.layers.max_pool2d(inputs=conv1, kernel_size=[2, 2], stride=2,
+                                             padding='VALID')    #pooling
+
+        upsamp1 = tf.image.resize_nearest_neighbor(pool1, self.input_size)    # upsampling
 
 
-        conv2 = tf.contrib.layers.conv2d(inputs=pool1, num_outputs=5, kernel_size=[9, 9],
+        conv2 = tf.contrib.layers.conv2d(inputs=upsamp1, num_outputs=5, kernel_size=[9, 9],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        self.layers_dict["conv2"]=conv2
 
-        pool2 = tf.contrib.layers.max_pool2d(inputs=conv2, kernel_size=[2, 2], stride=1,
-                                             padding='SAME') #pooling e upsampling
-        self.layers_dict["pool2"]=pool2
+        pool2 = tf.contrib.layers.max_pool2d(inputs=conv2, kernel_size=[2, 2], stride=2,
+                                             padding='VALID') #pooling
 
-        conv3 = tf.contrib.layers.conv2d(inputs=pool2, num_outputs=10, kernel_size=[7, 7],
+        upsamp2 = tf.image.resize_nearest_neighbor(pool2, self.input_size)    # upsampling
+
+        conv3 = tf.contrib.layers.conv2d(inputs=upsamp2, num_outputs=10, kernel_size=[7, 7],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        self.layers_dict["conv3"]=conv3
 
-        pool3 = tf.contrib.layers.max_pool2d(inputs=conv3, kernel_size=[2, 2], stride=1,
-                                             padding='SAME') #pooling e upsampling
-        self.layers_dict["pool3"]=pool3
+        pool3 = tf.contrib.layers.max_pool2d(inputs=conv3, kernel_size=[2, 2], stride=2,
+                                             padding='VALID') #pooling
 
-        linear_combination = tf.contrib.layers.conv2d(inputs=pool3, num_outputs=3,
+        upsamp3 = tf.image.resize_nearest_neighbor(pool3, self.input_size)    # upsampling
+
+        linear_combination = tf.contrib.layers.conv2d(inputs=upsamp3, num_outputs=1,
                                                       kernel_size=[1, 1],
                                                       stride=[1, 1], padding='SAME',
                                                       normalizer_fn=tf.contrib.layers.batch_norm,
                                                       normalizer_params=normalizer_params,
                                                       activation_fn=tf.nn.sigmoid)
-        self.layers_dict["linear_combination"]=linear_combination
 
         """Fine-scale Network"""
 
@@ -63,46 +62,46 @@ class ArchitectureDepthTest(architecture.Architecture):
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        self.layers_dict["conv4"]=conv4
 
-        pool4 = tf.contrib.layers.max_pool2d(inputs=conv4, kernel_size=[2, 2], stride=1,
-                                             padding='SAME') #pooling e upsampling
-        self.layers_dict["pool4"]=pool4
+        pool4 = tf.contrib.layers.max_pool2d(inputs=conv4, kernel_size=[2, 2], stride=2,
+                                             padding='VALID') #pooling e upsampling
 
-        concatenation = tf.concat([pool4, linear_combination], 3)
-        self.layers_dict["concatenation"]=concatenation
+        upsamp4 = tf.image.resize_nearest_neighbor(pool4, self.input_size)    # upsampling
+
+        concatenation = tf.concat([upsamp4, linear_combination], 3)
 
         conv5 = tf.contrib.layers.conv2d(inputs=concatenation, num_outputs=5, kernel_size=[5, 5],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        self.layers_dict["conv5"]=conv5
 
-        pool5 = tf.contrib.layers.max_pool2d(inputs=conv5, kernel_size=[2, 2], stride=1,
-                                             padding='SAME') #pooling e upsampling
-        self.layers_dict["pool5"]=pool5
+        pool5 = tf.contrib.layers.max_pool2d(inputs=conv5, kernel_size=[2, 2], stride=2,
+                                             padding='VALID') #pooling e upsampling
 
-        conv6 = tf.contrib.layers.conv2d(inputs=pool5, num_outputs=10, kernel_size=[3, 3],
+        upsamp5 = tf.image.resize_nearest_neighbor(pool5, self.input_size)    # upsampling
+
+        conv6 = tf.contrib.layers.conv2d(inputs=upsamp5, num_outputs=10, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        self.layers_dict["conv6"]=conv6
 
-        pool6 = tf.contrib.layers.max_pool2d(inputs=conv6, kernel_size=[2, 2], stride=1,
-                                             padding='SAME')  # pooling e upsampling
-        self.layers_dict["pool6"]=pool6
+        pool6 = tf.contrib.layers.max_pool2d(inputs=conv6, kernel_size=[2, 2], stride=2,
+                                             padding='VALID')  # pooling e upsampling
 
-        linear_combination2 = tf.contrib.layers.conv2d(inputs=pool6, num_outputs=1,
+        upsamp6 = tf.image.resize_nearest_neighbor(pool6, self.input_size)    # upsampling
+
+        linear_combination2 = tf.contrib.layers.conv2d(inputs=upsamp6, num_outputs=1,
                                                        kernel_size=[1, 1], stride=[1, 1],
                                                        padding='SAME',
                                                        normalizer_fn=tf.contrib.layers.batch_norm,
                                                        normalizer_params=normalizer_params,
                                                        activation_fn=tf.nn.sigmoid)
 
-        tf.summary.image("architecture_output", linear_combination2)
-        return linear_combination2
+        guided_trans = gct.guidedfilter_color_treinable(sample, linear_combination2, r=20, eps=10**-6)
+        tf.summary.image("architecture_output", guided_trans)
+        return guided_trans
 
 
 
@@ -114,7 +113,3 @@ class ArchitectureDepthTest(architecture.Architecture):
 
     def get_summary_writing_period(self):
         return self.config_dict["summary_writing_period"]
-
-    def get_layer(self, layer_name):
-        layer=self.layers_dict[layer_name]
-        return layer

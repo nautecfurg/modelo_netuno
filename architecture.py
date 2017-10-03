@@ -40,6 +40,22 @@ class Architecture(base.Base):
     def get_summary_writing_period(self):
         pass
 
+    def get_layer(self, layer_name):
+        """This method returns a reference to a layer in the architecture.
+        It must be overridden if the user wishes to visualize the hidden
+        layers of the network, but doesn't need to be implemented otherwise.
+
+        Args:
+            layer_name: The name of the desired layer
+
+
+        Returns:
+            layer: a reference to the layer's tensor
+
+        """
+        layer=None
+        return layer
+
     # def verify_config(self, parameters_list, config_dict):
     #     for parameter in parameters_list:
     #         if parameter not in config_dict:
