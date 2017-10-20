@@ -23,7 +23,7 @@ class Loss(base.Base):
         """
         pass
 
-    def train(self):
+    def train(self, optimizer_imp):
         pass
 
     def trainable(self):

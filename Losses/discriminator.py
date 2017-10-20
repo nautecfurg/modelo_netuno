@@ -152,7 +152,7 @@ class DiscriminatorLoss(loss.Loss):
         Returns:
             The operation to run to optimize the discriminator network.
         """
-        disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="discriminator")
+        disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model/discriminator")
 
         # Discriminator Loss
         disc_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
