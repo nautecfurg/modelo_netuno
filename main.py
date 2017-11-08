@@ -209,9 +209,6 @@ def run_training(opt_values):
         opt_values: dictionary containing parameters as keys and arguments as values.
 
     """
-
-
-
     # Get architecture, dataset and loss name
     arch_name = opt_values['architecture_name']
     dataset_name = opt_values['dataset_name']
@@ -258,6 +255,7 @@ def run_training(opt_values):
             architecture_output = architecture_imp.prediction(architecture_input, training=True)
             loss_op = loss_imp.evaluate(architecture_output, target_output)
         train_op, global_step = training(loss_op, optimizer_imp)
+
         if loss_imp.trainable():
             loss_tr = loss_imp.train(optimizer_imp)
         # Merge all train summaries and write
@@ -269,9 +267,9 @@ def run_training(opt_values):
             architecture_output_test = architecture_imp.prediction(architecture_input_test,
                                                                    training=False) # TODO: false?
             loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
+
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
         test_loss = tf.summary.scalar('test_loss', tf_test_loss)
-
 
         train_summary_dir=os.path.join(summary_dir, "Train")
         test_summary_dir=os.path.join(summary_dir, "Test")
@@ -313,15 +311,13 @@ def run_training(opt_values):
                 # will be returned in the tuple from the call.
 
                 if loss_imp.trainable():
-                    if step % architecture_imp.get_summary_writing_period() == 0:
-                        loss_value, _, _, summary = sess.run([loss_op, train_op, loss_tr, merged])
-                    else:
-                        loss_value, _, _ = sess.run([loss_op, train_op, loss_tr])
+                    # Update Discriminator
+                    _ = sess.run([loss_tr])
+
+                if step % architecture_imp.get_summary_writing_period() == 0:
+                    loss_value, _, summary = sess.run([loss_op, train_op, merged])
                 else:
-                    if step % architecture_imp.get_summary_writing_period() == 0:
-                        loss_value, _, summary = sess.run([loss_op, train_op, merged])
-                    else:
-                        loss_value, _ = sess.run([loss_op, train_op])
+                    loss_value, _ = sess.run([loss_op, train_op])
                 duration = time.time() - start_time
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     print('Step %d: loss = %.2f (%.3f sec)' % (step, np.mean(loss_value),

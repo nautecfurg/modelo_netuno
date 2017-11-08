@@ -153,12 +153,12 @@ class DiscriminatorLoss(loss.Loss):
             The operation to run to optimize the discriminator network.
         """
         disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model/discriminator")
-
+    
         # Discriminator Loss
         disc_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
             labels=self.disc_gt, logits=tf.ones_like(self.disc_gt)), name="disc_real_loss")
         disc_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=self.disc_out, logits=tf.ones_like(self.disc_out)), name="disc_fake_loss")
+            labels=self.disc_out, logits=tf.zeros_like(self.disc_out)), name="disc_fake_loss")
         disc_error = tf.add(disc_real, disc_fake)
 
         # Add To Summary
