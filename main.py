@@ -209,9 +209,6 @@ def run_training(opt_values):
         opt_values: dictionary containing parameters as keys and arguments as values.
 
     """
-
-
-
     # Get architecture, dataset and loss name
     arch_name = opt_values['architecture_name']
     dataset_name = opt_values['dataset_name']
@@ -256,8 +253,9 @@ def run_training(opt_values):
 
         with tf.variable_scope("model"):
             architecture_output = architecture_imp.prediction(architecture_input, training=True)
-        loss_op = loss_imp.evaluate(architecture_output, target_output)
+            loss_op = loss_imp.evaluate(architecture_output, target_output)
         train_op, global_step = training(loss_op, optimizer_imp)
+
         if loss_imp.trainable():
             loss_tr = loss_imp.train(optimizer_imp)
         # Merge all train summaries and write
@@ -268,10 +266,9 @@ def run_training(opt_values):
         with tf.variable_scope("model", reuse=True):
             architecture_output_test = architecture_imp.prediction(architecture_input_test,
                                                                    training=False) # TODO: false?
-        loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
+            loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
         test_loss = tf.summary.scalar('test_loss', tf_test_loss)
-
 
         train_summary_dir=os.path.join(summary_dir, "Train")
         test_summary_dir=os.path.join(summary_dir, "Test")
@@ -312,14 +309,14 @@ def run_training(opt_values):
                 # the list passed to sess.run() and the value tensors
                 # will be returned in the tuple from the call.
 
-                if loss_imp.trainable():
-                    if step % architecture_imp.get_summary_writing_period() == 0:
+                if step % architecture_imp.get_summary_writing_period() == 0:
+                    if loss_imp.trainable():
                         loss_value, _, _, summary = sess.run([loss_op, train_op, loss_tr, merged])
                     else:
-                        loss_value, _, _ = sess.run([loss_op, train_op, loss_tr])
-                else:
-                    if step % architecture_imp.get_summary_writing_period() == 0:
                         loss_value, _, summary = sess.run([loss_op, train_op, merged])
+                else:
+                    if loss_imp.trainable():
+                        loss_value, _, _ = sess.run([loss_op, train_op, loss_tr])
                     else:
                         loss_value, _ = sess.run([loss_op, train_op])
                 duration = time.time() - start_time

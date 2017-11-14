@@ -48,7 +48,11 @@ class FeatureLoss(loss.Loss):
             Nothing.
         """
         parameters_list = ["weights_file", "loss_layer"]
-        self.config_dict = self.open_config(parameters_list)
+        self.open_config(parameters_list)
+
+        # Get JSON Values
+        self.weights_file = self.config_dict["weights_file"]
+        self.loss_layer = self.config_dict["loss_layer"]
 
         # Override Default Weights File
         if wfile != None:
@@ -119,8 +123,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu11" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv11, conv11_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv11, conv11_gt, name=None))
 
         # Second Convolution
         w_conv12 = tf.Variable(tf.truncated_normal([3, 3, 64, 64], dtype=tf.float32, stddev=1e-1),
@@ -141,8 +144,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu12" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv12, conv12_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv12, conv12_gt, name=None))
 
         # First Maxpool
         pool1 = tf.nn.max_pool(conv12, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
@@ -169,8 +171,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu21" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv21, conv21_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv21, conv21_gt, name=None))
 
         # Fourth Convolution
         w_conv22 = tf.Variable(tf.truncated_normal([3, 3, 128, 128], dtype=tf.float32, stddev=1e-1),
@@ -191,8 +192,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu22" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv22, conv22_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv22, conv22_gt, name=None))
 
         # Second Maxpool
         pool2 = tf.nn.max_pool(conv22, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
@@ -219,8 +219,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu31" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv31, conv31_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv31, conv31_gt, name=None))
 
         # Sixth Convolution
         w_conv32 = tf.Variable(tf.truncated_normal([3, 3, 256, 256], dtype=tf.float32, stddev=1e-1),
@@ -241,8 +240,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu32" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv32, conv32_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv32, conv32_gt, name=None))
 
         # Seventh Convolution
         w_conv33 = tf.Variable(tf.truncated_normal([3, 3, 256, 256], dtype=tf.float32, stddev=1e-1),
@@ -263,8 +261,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu33" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv33, conv33_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv33, conv33_gt, name=None))
 
         # Third Maxpool
         pool3 = tf.nn.max_pool(conv33, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
@@ -291,8 +288,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu41" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv41, conv41_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv41, conv41_gt, name=None))
 
         # Nineth Convolution
         w_conv42 = tf.Variable(tf.truncated_normal([3, 3, 512, 512], dtype=tf.float32, stddev=1e-1),
@@ -313,8 +309,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu42" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv42, conv42_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv42, conv42_gt, name=None))
 
         # Tenth Convolution
         w_conv43 = tf.Variable(tf.truncated_normal([3, 3, 512, 512], dtype=tf.float32, stddev=1e-1),
@@ -335,8 +330,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu43" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv43, conv43_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv43, conv43_gt, name=None))
 
         # Fourth Maxpool
         pool4 = tf.nn.max_pool(conv43, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
@@ -363,8 +357,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu51" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv51, conv51_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv51, conv51_gt, name=None))
 
         # Twelfth Convolution
         w_conv52 = tf.Variable(tf.truncated_normal([3, 3, 512, 512], dtype=tf.float32, stddev=1e-1),
@@ -385,8 +378,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu52" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv52, conv52_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv52, conv52_gt, name=None))
 
         # Thirteenth Convolution
         w_conv53 = tf.Variable(tf.truncated_normal([3, 3, 512, 512], dtype=tf.float32, stddev=1e-1),
@@ -407,8 +399,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "relu53" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(conv53, conv53_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(conv53, conv53_gt, name=None))
 
         # Fifth Maxpool
         pool5 = tf.nn.max_pool(conv53, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
@@ -438,8 +429,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "fc1" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(fc1, fc1_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(fc1, fc1_gt, name=None))
 
         # Second FC
         w_fc2 = tf.Variable(tf.truncated_normal([4096, 4096], dtype=tf.float32, stddev=1e-1),
@@ -458,8 +448,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "fc2" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(fc2, fc2_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(fc2, fc2_gt, name=None))
 
         # Third FC
         w_fc3 = tf.Variable(tf.truncated_normal([4096, 1000], dtype=tf.float32, stddev=1e-1),
@@ -476,8 +465,7 @@ class FeatureLoss(loss.Loss):
 
         # Loss
         if "fc3" in self.loss_layer:
-            loss_value += tf.reduce_mean(tf.squared_difference(fc3, fc3_gt, name=None),
-                                         reduction_indices=[1, 2, 3])
+            loss_value += tf.reduce_mean(tf.squared_difference(fc3, fc3_gt, name=None))
 
         # Load Weights
         self.load_weights(loss_parameters)

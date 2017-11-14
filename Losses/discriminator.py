@@ -43,7 +43,7 @@ class DiscriminatorLoss(loss.Loss):
             The value of the discriminator loss returned by the network.
         """
 
-        def discriminator_layer(image, name, n, depth, stride):
+        def discriminator_layer(image, name, n, depth, stride, training=True):
             """This function creates one layer of the discriminator network.
 
             This function is to be called when creating the structure of the
@@ -72,7 +72,7 @@ class DiscriminatorLoss(loss.Loss):
             leaky = tf.maximum(0.1 * conv, conv)
 
             return tf.contrib.layers.batch_norm(leaky, center=True, updates_collections=None,
-                                                scale=True, is_training=True)
+                                                scale=True, is_training=training)
 
         with tf.variable_scope("discriminator", reuse=None):
             # Input Layer
@@ -84,14 +84,14 @@ class DiscriminatorLoss(loss.Loss):
             leaky = tf.maximum(0.1 * conv, conv)
 
             # Discriminator Layers
-            layer1 = discriminator_layer(leaky, "A", 64, 64, 2)
-            layer2 = discriminator_layer(layer1, "B", 128, 64, 1)
-            layer3 = discriminator_layer(layer2, "C", 128, 128, 2)
-            layer4 = discriminator_layer(layer3, "D", 256, 128, 1)
-            layer5 = discriminator_layer(layer4, "E", 256, 256, 2)
-            layer6 = discriminator_layer(layer5, "F", 512, 256, 2)
-            layer7 = discriminator_layer(layer6, "G", 512, 512, 2)
-            layer8 = discriminator_layer(layer7, "H", 512, 512, 2)
+            layer1 = discriminator_layer(leaky, "A", 64, 64, 2, training=True)
+            layer2 = discriminator_layer(layer1, "B", 128, 64, 1, training=True)
+            layer3 = discriminator_layer(layer2, "C", 128, 128, 2, training=True)
+            layer4 = discriminator_layer(layer3, "D", 256, 128, 1, training=True)
+            layer5 = discriminator_layer(layer4, "E", 256, 256, 2, training=True)
+            layer6 = discriminator_layer(layer5, "F", 512, 256, 2, training=True)
+            layer7 = discriminator_layer(layer6, "G", 512, 512, 2, training=True)
+            layer8 = discriminator_layer(layer7, "H", 512, 512, 2, training=True)
 
             # Output Layer
             shape = int(np.prod(layer8.get_shape()[1:]))
@@ -114,14 +114,14 @@ class DiscriminatorLoss(loss.Loss):
             leaky = tf.maximum(0.1 * conv, conv)
 
             # Discriminator Layers
-            layer1 = discriminator_layer(leaky, "A", 64, 64, 2)
-            layer2 = discriminator_layer(layer1, "B", 128, 64, 1)
-            layer3 = discriminator_layer(layer2, "C", 128, 128, 2)
-            layer4 = discriminator_layer(layer3, "D", 256, 128, 1)
-            layer5 = discriminator_layer(layer4, "E", 256, 256, 2)
-            layer6 = discriminator_layer(layer5, "F", 512, 256, 2)
-            layer7 = discriminator_layer(layer6, "G", 512, 512, 2)
-            layer8 = discriminator_layer(layer7, "H", 512, 512, 2)
+            layer1 = discriminator_layer(leaky, "A", 64, 64, 2, training=False)
+            layer2 = discriminator_layer(layer1, "B", 128, 64, 1, training=False)
+            layer3 = discriminator_layer(layer2, "C", 128, 128, 2, training=False)
+            layer4 = discriminator_layer(layer3, "D", 256, 128, 1, training=False)
+            layer5 = discriminator_layer(layer4, "E", 256, 256, 2, training=False)
+            layer6 = discriminator_layer(layer5, "F", 512, 256, 2, training=False)
+            layer7 = discriminator_layer(layer6, "G", 512, 512, 2, training=False)
+            layer8 = discriminator_layer(layer7, "H", 512, 512, 2, training=False)
 
             # Output Layer
             shape = int(np.prod(layer8.get_shape()[1:]))
@@ -136,7 +136,7 @@ class DiscriminatorLoss(loss.Loss):
 
         # Network Loss
         disc_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=self.disc_out, logits=tf.ones_like(self.disc_out)))
+             logits=self.disc_out, labels=tf.ones_like(self.disc_out)))
 
         return disc_loss
 
@@ -152,21 +152,19 @@ class DiscriminatorLoss(loss.Loss):
         Returns:
             The operation to run to optimize the discriminator network.
         """
-        disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="discriminator")
-
+        disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model/discriminator")
+    
         # Discriminator Loss
         disc_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=self.disc_gt, logits=tf.ones_like(self.disc_gt)), name="disc_real_loss")
+             logits=self.disc_gt, labels=tf.ones_like(self.disc_gt)), name="disc_real_loss")
         disc_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=self.disc_out, logits=tf.ones_like(self.disc_out)), name="disc_fake_loss")
+             logits=self.disc_out, labels=tf.zeros_like(self.disc_out)), name="disc_fake_loss")
         disc_error = tf.add(disc_real, disc_fake)
 
         # Add To Summary
-        tf.summary.scalar("discriminator_score_groundtruth", tf.nn.sigmoid(
-            tf.reduce_mean(self.disc_gt)))
-        tf.summary.scalar("discriminator_score_output", tf.nn.sigmoid(
-            tf.reduce_mean(self.disc_out)))
-        tf.summary.scalar("discriminator_error", disc_error)
+        tf.summary.scalar("discriminator_loss_real", disc_real)
+        tf.summary.scalar("discriminator_loss_fake", disc_fake)
+        tf.summary.scalar("discriminator_loss", disc_error)
 
         # Optimization
         disc_train = optimizer_imp.minimize(disc_error, var_list=disc_vars)

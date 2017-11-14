@@ -114,6 +114,8 @@ Executions/*
 Datasets/Data/*
 !Datasets/Data/.gitkeep
 
+Losses/vgg16_weights.npz
+
 *.png
 *.jpg
 *.bmp

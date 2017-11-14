@@ -1,4 +1,4 @@
 {
-    "weights_file": "vgg16_weights.npz",
+    "weights_file": "/home/nautec/mestrado_joel/modelo_netuno/Losses/vgg16_weights.npz",
     "loss_layer": "relu21"
 }

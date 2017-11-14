@@ -4,7 +4,7 @@
         "updates_collections": null,
         "scale": true
     },
-    "summary_writing_period": 100,
+    "summary_writing_period": 300,
     "validation_period": 300,
     "model_saving_period": 300
 }
