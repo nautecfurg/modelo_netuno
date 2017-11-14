@@ -267,10 +267,6 @@ def run_training(opt_values):
             architecture_output_test = architecture_imp.prediction(architecture_input_test,
                                                                    training=False) # TODO: false?
             loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
-<<<<<<< HEAD
-=======
-
->>>>>>> 995f38255119ce2c6d76a1b462caec237052a1e6
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
         test_loss = tf.summary.scalar('test_loss', tf_test_loss)
 
@@ -313,7 +309,6 @@ def run_training(opt_values):
                 # the list passed to sess.run() and the value tensors
                 # will be returned in the tuple from the call.
 
-<<<<<<< HEAD
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     if loss_imp.trainable():
                         loss_value, _, _, summary = sess.run([loss_op, train_op, loss_tr, merged])
@@ -324,16 +319,6 @@ def run_training(opt_values):
                         loss_value, _, _ = sess.run([loss_op, train_op, loss_tr])
                     else:
                         loss_value, _ = sess.run([loss_op, train_op])
-=======
-                if loss_imp.trainable():
-                    # Update Discriminator
-                    _ = sess.run([loss_tr])
-
-                if step % architecture_imp.get_summary_writing_period() == 0:
-                    loss_value, _, summary = sess.run([loss_op, train_op, merged])
-                else:
-                    loss_value, _ = sess.run([loss_op, train_op])
->>>>>>> 995f38255119ce2c6d76a1b462caec237052a1e6
                 duration = time.time() - start_time
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     print('Step %d: loss = %.2f (%.3f sec)' % (step, np.mean(loss_value),

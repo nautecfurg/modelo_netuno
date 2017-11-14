@@ -158,11 +158,7 @@ class DiscriminatorLoss(loss.Loss):
         disc_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
              logits=self.disc_gt, labels=tf.ones_like(self.disc_gt)), name="disc_real_loss")
         disc_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-<<<<<<< HEAD
              logits=self.disc_out, labels=tf.zeros_like(self.disc_out)), name="disc_fake_loss")
-=======
-            labels=self.disc_out, logits=tf.zeros_like(self.disc_out)), name="disc_fake_loss")
->>>>>>> 995f38255119ce2c6d76a1b462caec237052a1e6
         disc_error = tf.add(disc_real, disc_fake)
 
         # Add To Summary
