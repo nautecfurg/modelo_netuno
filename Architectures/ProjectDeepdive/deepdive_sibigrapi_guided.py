@@ -3,8 +3,9 @@ import tensorflow as tf
 import Architectures.Layers.inception_resnet_a as ira
 import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
+import Architectures.Layers.guidedfilter_color_trainable_test as gct
 
-class DeepdiveSibigrapi(architecture.Architecture):
+class DeepdiveSibigrapiGuided(architecture.Architecture):
     def __init__(self):
         parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]
@@ -33,8 +34,21 @@ class DeepdiveSibigrapi(architecture.Architecture):
                                          activation_fn=None)
         const_1 = tf.constant(1, dtype=tf.float32)
         brelu = tf.minimum(const_1, tf.nn.relu(conv2))
-        tf.summary.image("architecture_output", brelu)
-        return brelu
+
+        brelu_1 = tf.expand_dims(brelu[:,:,:,0], -1)
+        brelu_2 = tf.expand_dims(brelu[:,:,:,1], -1)
+        brelu_3 = tf.expand_dims(brelu[:,:,:,2], -1)
+
+        with tf.variable_scope("guided_red"):
+            guided_trans_1 = gct.guidedfilter_color_treinable(sample, brelu_1, r=20, eps=10**-3)
+        with tf.variable_scope("guided_green"):
+            guided_trans_2 = gct.guidedfilter_color_treinable(sample, brelu_2, r=20, eps=10**-3)
+        with tf.variable_scope("guided_blue"):
+            guided_trans_3 = gct.guidedfilter_color_treinable(sample, brelu_3, r=20, eps=10**-3)
+        guided_trans = tf.concat([guided_trans_1, guided_trans_2, guided_trans_3], 3)
+
+        tf.summary.image("architecture_output", guided_trans)
+        return guided_trans
 
 
 

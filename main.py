@@ -188,7 +188,8 @@ def training(loss_op, optimizer_imp):
         train_op: The Op for training.
     """
     # Get variable list
-    model_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")
+    model_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model/architecture")
+    
     # Add a scalar summary for the snapshot loss.
     tf.summary.scalar('train_loss', loss_op)
     # Create a variable to track the global step.
@@ -252,7 +253,8 @@ def run_training(opt_values):
         architecture_input, target_output = dataset_imp.next_batch_train(initial_step)
 
         with tf.variable_scope("model"):
-            architecture_output = architecture_imp.prediction(architecture_input, training=True)
+            with tf.variable_scope("architecture"):
+                architecture_output = architecture_imp.prediction(architecture_input, training=True)
             loss_op = loss_imp.evaluate(architecture_output, target_output)
         train_op, global_step = training(loss_op, optimizer_imp)
 
@@ -264,7 +266,8 @@ def run_training(opt_values):
         architecture_input_test, target_output_test, init = dataset_imp.next_batch_test()
 
         with tf.variable_scope("model", reuse=True):
-            architecture_output_test = architecture_imp.prediction(architecture_input_test,
+            with tf.variable_scope("architecture", reuse=True):
+                architecture_output_test = architecture_imp.prediction(architecture_input_test,
                                                                    training=False) # TODO: false?
             loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
