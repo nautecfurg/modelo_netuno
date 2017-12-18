@@ -24,9 +24,10 @@ class RestorationTransmissionDehazenet(evaluate.Evaluate):
         im_names = glob.glob(os.path.join(evaluate_input_dir, "*.jpg")) +\
                 glob.glob(os.path.join(evaluate_input_dir, "*.png")) +\
                 glob.glob(os.path.join(evaluate_input_dir, "*.bmp "))
-        reuse = None
-        with tf.Graph().as_default():
-            for name in im_names:
+        #reuse = None
+
+        for name in im_names:
+            with tf.Graph().as_default():
                 image = Image.open(name).convert('RGB')
                 image = np.array(image, dtype=np.float32) / 255.0
                 architecture_instance.input_size=image.shape[0:2]
@@ -34,8 +35,7 @@ class RestorationTransmissionDehazenet(evaluate.Evaluate):
                 architecture_input = tf.placeholder("float", shape=image.shape,
                                                 name="input_image")
                 
-                with tf.variable_scope("model", reuse=reuse):
-                    reuse=True
+                with tf.variable_scope("model", reuse=None):
                     architecture_output = architecture_instance.prediction(architecture_input,
                                                                         training=False)
 
