@@ -7,9 +7,9 @@ import tensorflow as tf
 from PIL import Image
 import math
 import evaluate
+import Architectures.Layers.guidedfilter_color as gc
 
-
-class RestorationTransmissionDehazenet(evaluate.Evaluate):
+class RestorationTransmissionGuided(evaluate.Evaluate):
     def eval(self, opt_values, architecture_instance):
         execution_dir = opt_values["execution_path"]
         evaluate_input_dir = opt_values["evaluate_path"]
@@ -24,10 +24,9 @@ class RestorationTransmissionDehazenet(evaluate.Evaluate):
         im_names = glob.glob(os.path.join(evaluate_input_dir, "*.jpg")) +\
                 glob.glob(os.path.join(evaluate_input_dir, "*.png")) +\
                 glob.glob(os.path.join(evaluate_input_dir, "*.bmp "))
-        #reuse = None
-
-        for name in im_names:
-            with tf.Graph().as_default():
+        reuse = None
+        with tf.Graph().as_default():
+            for name in im_names:
                 image = Image.open(name).convert('RGB')
                 image = np.array(image, dtype=np.float32) / 255.0
                 architecture_instance.input_size=image.shape[0:2]
@@ -35,9 +34,13 @@ class RestorationTransmissionDehazenet(evaluate.Evaluate):
                 architecture_input = tf.placeholder("float", shape=image.shape,
                                                 name="input_image")
                 
-                with tf.variable_scope("model", reuse=None):
+                with tf.variable_scope("model", reuse=reuse):
+                    reuse=True
                     architecture_output = architecture_instance.prediction(architecture_input,
                                                                         training=False)
+            
+                    guided_trans = gc.guidedfilter_color(architecture_input, architecture_output, 
+                                                         r=20, eps= 10**-3 )
 
                 # The op for initializing the variables.
                 init_op = tf.group(tf.global_variables_initializer(),
@@ -54,7 +57,7 @@ class RestorationTransmissionDehazenet(evaluate.Evaluate):
                 print("Model restored.")
 
                 feed_dict = {architecture_input: image}
-                output_np = sess.run(architecture_output, feed_dict=feed_dict)
+                output_np = sess.run(guided_trans, feed_dict=feed_dict)
                 
                 output_np.shape = output_np.shape[1:-1]
 

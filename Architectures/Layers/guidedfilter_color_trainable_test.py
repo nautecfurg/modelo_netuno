@@ -15,13 +15,16 @@ def guidedfilter_color_treinable(I,p,r,eps):
         q: filtering output tensor (rgb tensor)
 
     """
+
+    p_shape = p.shape
+    w_conv_p =  tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, p_shape[3], p_shape[3]])
     w_conv = tf.constant(1.0, dtype=tf.float32, shape=[2*r+1, 2*r+1, 1, 1])
     eps_var = tf.get_variable("eps_guided", shape=[1, 1, 1, 1],
                               initializer=tf.constant_initializer(0.001))
     eps_tf = tf.maximum(eps_var,eps) 
     ones = tf.ones(p.get_shape()[1:])  #gambiarra para fazer o guided em um batch variavel
     ones = tf.expand_dims(ones, 0)
-    N = tf.nn.conv2d(ones, w_conv, strides=[1, 1, 1, 1], padding='SAME')
+    N = tf.nn.conv2d(ones, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')
     I_r = tf.expand_dims(I[:, :, :, 0], -1)
     I_g = tf.expand_dims(I[:, :, :, 1], -1)
     I_b = tf.expand_dims(I[:, :, :, 2], -1)
@@ -29,11 +32,11 @@ def guidedfilter_color_treinable(I,p,r,eps):
     mean_I_g = tf.nn.conv2d(I_g, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N
     mean_I_b = tf.nn.conv2d(I_b, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N
 
-    mean_p = tf.nn.conv2d(p, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N
+    mean_p = tf.nn.conv2d(p, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N
 
-    mean_Ip_r = tf.nn.conv2d(I_r*p, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N
-    mean_Ip_g = tf.nn.conv2d(I_g*p, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N
-    mean_Ip_b = tf.nn.conv2d(I_b*p, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N
+    mean_Ip_r = tf.nn.conv2d(I_r*p, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N
+    mean_Ip_g = tf.nn.conv2d(I_g*p, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N
+    mean_Ip_b = tf.nn.conv2d(I_b*p, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N
 
     # this is the covariance of (I, p) in each local patch.
     cov_Ip_r = mean_Ip_r - mean_I_r*mean_p
@@ -52,12 +55,12 @@ def guidedfilter_color_treinable(I,p,r,eps):
     mean_I_gb = mean_I_g * mean_I_b
     mean_I_bb = mean_I_b * mean_I_b
 
-    var_I_rr = tf.nn.conv2d(I_r*I_r, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_rr
-    var_I_rg = tf.nn.conv2d(I_r*I_g, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_rg
-    var_I_rb = tf.nn.conv2d(I_r*I_b, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_rb
-    var_I_gg = tf.nn.conv2d(I_g*I_g, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_gg
-    var_I_gb = tf.nn.conv2d(I_g*I_b, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_gb
-    var_I_bb = tf.nn.conv2d(I_b*I_b, w_conv, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_bb
+    var_I_rr = tf.nn.conv2d(I_r*I_r, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_rr
+    var_I_rg = tf.nn.conv2d(I_r*I_g, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_rg
+    var_I_rb = tf.nn.conv2d(I_r*I_b, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_rb
+    var_I_gg = tf.nn.conv2d(I_g*I_g, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_gg
+    var_I_gb = tf.nn.conv2d(I_g*I_b, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_gb
+    var_I_bb = tf.nn.conv2d(I_b*I_b, w_conv_p, strides=[1, 1, 1, 1], padding='SAME')/N - mean_I_bb
 
     sigma1 = tf.concat([var_I_rr+eps_tf, var_I_rg, var_I_rb], 3)
     sigma2 = tf.concat([var_I_rg, var_I_gg+eps_tf, var_I_gb], 3)
