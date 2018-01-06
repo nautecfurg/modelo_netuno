@@ -5,7 +5,7 @@ import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
 import Architectures.Layers.guidedfilter_color_trainable_test as gct
 
-class DeepdiveSibigrapiGuided2(architecture.Architecture):
+class DeepdiveSibigrapiGuided3(architecture.Architecture):
     def __init__(self):
         parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]
@@ -32,7 +32,7 @@ class DeepdiveSibigrapiGuided2(architecture.Architecture):
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
-                                         activation_fn=tf.nn.relu)
+                                         activation_fn=tf.nn.sigmoid)
 
         guided_list = []
         for i in range(3):
