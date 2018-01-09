@@ -10,6 +10,7 @@ import tensorflow as tf
 
 from PIL import Image
 
+from Evaluates import simulator
 import evaluate
 
 class EvaluateTransmissionNet(evaluate.Evaluate):
@@ -28,10 +29,14 @@ class EvaluateTransmissionNet(evaluate.Evaluate):
         output_path = os.path.join(output_dir, output_name)
         os.makedirs(output_path)
         model_dir = os.path.join(execution_dir, "Model/")
-        im_names = glob.glob(os.path.join(input_dir, "*.jpg")) +\
-                glob.glob(os.path.join(input_dir, "*.png"))
+        im_names = glob.glob(os.path.join(input_dir, "*color*.jpg")) +\
+                glob.glob(os.path.join(input_dir, "*color*.png"))
+        depth_names = glob.glob(os.path.join(input_dir, "*Depth*.jpg")) +\
+                glob.glob(os.path.join(input_dir, "*Depth*.png"))
         if im_names == []:
             return
+        im_names.sort()
+        depth_names.sort()
         img = Image.open(im_names[0]).convert('RGB')
         img_shape = np.shape(img) #supoe-se que todas as imagens tem o mesmo shape
         num_imgs = len(im_names)
@@ -65,9 +70,22 @@ class EvaluateTransmissionNet(evaluate.Evaluate):
             total_batches = width_out * height_out * num_imgs // self.batch_size
             current_time = time.time()
 
+            #TODO: config???
+            turbidity_path = "Datasets/Data/TurbidityAzul"
+            turbidity_size = (128, 128)
+            batch_size = 1
             for count, img_name in enumerate(im_names):
+                c, binf, ranges = simulator.acquireProperties(turbidity_path, turbidity_size, batch_size, .45, .55, sess)
                 img = Image.open(img_name).convert('RGB')
                 img = np.array(img, dtype=np.float32) / 255.0
+                depth = Image.open(depth_names[count])
+                depth = np.array(depth, dtype=np.float32) / 12000.0
+                tf_img = tf.convert_to_tensor(img)
+                tf_depth = tf.convert_to_tensor(depth)
+                tf_depth = tf.stack([tf_depth, tf_depth, tf_depth], axis=2)
+                img = simulator.applyTurbidity(tf_img, tf_depth, c, binf, ranges)
+                img = sess.run(img)
+                img = np.reshape(img, img_shape)
                 for y in range(height_out):
                     for x in range(width_out):
                         batch[current_batch_size,:,:,:] = img[x:x+patch_size[0], y:y+patch_size[0],:]
