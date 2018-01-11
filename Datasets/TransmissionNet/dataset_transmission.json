@@ -21,6 +21,6 @@
     ],
     "turbidity_path": "Datasets/Data/TurbidityAzul",
     "turbidity_size": [128, 128],
-    "trans_minval": 0.05,
+    "trans_minval": 0,
     "trans_maxval": 1
 }

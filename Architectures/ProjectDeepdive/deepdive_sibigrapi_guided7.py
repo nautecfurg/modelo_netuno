@@ -5,7 +5,7 @@ import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
 import Architectures.Layers.guidedfilter_color_trainable_test as gct
 
-class DeepdiveSibigrapiGuided2(architecture.Architecture):
+class DeepdiveSibigrapiGuided7(architecture.Architecture):
     def __init__(self):
         parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]
@@ -33,6 +33,8 @@ class DeepdiveSibigrapiGuided2(architecture.Architecture):
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
+        const_1 = tf.constant(1, dtype=tf.float32)
+        brelu = tf.minimum(conv2, 1)
 
         guided_list = []
         for i in range(3):
@@ -42,23 +44,22 @@ class DeepdiveSibigrapiGuided2(architecture.Architecture):
                 reuse = True
             
             with tf.variable_scope("guided",reuse=reuse):
-                conv2_layer =tf.expand_dims(conv2[:,:,:,i], -1) 
-                guided_layer = gct.guidedfilter_color_treinable(sample, conv2_layer, r=20, eps=10**-3)
+                brelu_layer =tf.expand_dims(brelu[:,:,:,i], -1) 
+                guided_layer = gct.guidedfilter_color_treinable(sample, brelu_layer, r=20, eps=10**-3)
                 guided_list.append(guided_layer)
 
         guided_list.append(sample)
         guided_plus_skip = tf.concat(guided_list, 3)
         conv3 = tf.contrib.layers.conv2d(inputs=guided_plus_skip, num_outputs=3, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
-                                         normalizer_fn=tf.contrib.layers.batch_norm,
-                                         normalizer_params=normalizer_params,
+                                         normalizer_fn=None,
                                          activation_fn=None)
         
-        const_1 = tf.constant(1, dtype=tf.float32)
-        brelu = tf.minimum(const_1, tf.nn.relu(conv3))
+        
+        brelu2 = tf.minimum(const_1, tf.nn.relu(conv3))
 
-        tf.summary.image("architecture_output", brelu)
-        return brelu
+        tf.summary.image("architecture_output", brelu2)
+        return brelu2
 
 
 

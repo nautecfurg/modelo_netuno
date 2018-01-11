@@ -9,8 +9,8 @@ import Datasets.TransmissionNet.simulator as simulator
 import dataset
 
 class DatasetTransmission(dataset.Dataset):
-    """Define a estrutura para extracao de patches
-    para o treinamento e validacao da TransmissionNet"""
+    """Defines the stricture for extracting patches for training
+    and validation of TransmissionNet"""
     def __init__(self):
         parameters_list = ["train_path", "test_path", "input_size", "output_size", "turbidity_path",
                            "turbidity_size", "patch_size", "trans_minval", "trans_maxval"]
@@ -128,4 +128,5 @@ class DatasetTransmission(dataset.Dataset):
 
         images = simulator.applyTurbidityTransmission(images, self.binf, transmissions)
         tf.summary.image("image", images)
+        tf.summary.image("transmission", transmissions)
         return images, transmissions, initializer
