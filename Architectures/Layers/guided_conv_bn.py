@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-def guidedfilter_conv2d(guided_inputs, guide_inputs, num_outputs, guide_kernel_size,
-                        guided_kernel_size, stride, padding='SAME',):
+def guidedfilter_conv_bn(guided_inputs, guide_inputs, num_outputs, guide_kernel_size,
+                        guided_kernel_size, stride, normalizer_params, padding='SAME'):
     """
     Summary:
         This function performs what we call guided convolution
@@ -25,7 +25,8 @@ def guidedfilter_conv2d(guided_inputs, guide_inputs, num_outputs, guide_kernel_s
     weights = tf.contrib.layers.conv2d(inputs=guide_inputs, num_outputs=kernel_length,
                                     kernel_size=guide_kernel_size,
                                     stride=stride, padding=padding,
-                                    normalizer_fn=None,
+                                    normalizer_fn=tf.contrib.layers.batch_norm,
+                                    normalizer_params=normalizer_params,
                                     activation_fn=None)
 
     strides = [1]+stride+[1]
