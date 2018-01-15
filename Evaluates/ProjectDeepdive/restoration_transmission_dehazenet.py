@@ -65,6 +65,7 @@ class RestorationTransmissionDehazenet(evaluate.Evaluate):
                 restored_output = Image.fromarray(restored_output_np)
                 name = name[len(evaluate_input_dir):]
                 restored_output.save(evaluate_output_path + name)
+                output_np = np.clip(output_np,0,1)
                 output_np = (output_np * 255).astype(np.uint8)
                 output = Image.fromarray(output_np, mode='L')
                 output.save(evaluate_output_path + name+"_t.jpg")
@@ -89,7 +90,8 @@ def AtmLight(im, dark):
 
 def Recover(im, t, A, tx=0.1):
     res = np.empty(im.shape,im.dtype)
-    t = np.maximum(t, tx)
+    t = np.clip(t,tx,1) 
+    #t = np.maximum(t, tx)
     for ind in range(0,3):
         res[:,:,ind] = (im[:,:,ind]-A[ind]*(1 - t))/t 
     res = np.clip(res - np.amin(res), a_min=0,  a_max=None)
