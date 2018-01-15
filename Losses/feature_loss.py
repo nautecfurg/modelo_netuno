@@ -101,8 +101,8 @@ class FeatureLoss(loss.Loss):
         # Preprocess
         mean = tf.constant([123.68, 116.779, 103.939], dtype=tf.float32,
                            shape=[1, 1, 1, 3], name="img_mean")
-        architecture_output -= mean
-        target_output -= mean
+        architecture_output = architecture_output*255.0 - mean
+        target_output = target_output*255.0 - mean
 
         # First Convolution
         w_conv11 = tf.Variable(tf.truncated_normal([3, 3, 3, 64], dtype=tf.float32, stddev=1e-1),
