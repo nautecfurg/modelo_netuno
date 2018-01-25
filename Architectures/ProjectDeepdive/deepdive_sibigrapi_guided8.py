@@ -5,7 +5,7 @@ import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
 import Architectures.Layers.guidedfilter_color_trainable_test as gct
 
-class DeepdiveSibigrapiGuided7(architecture.Architecture):
+class DeepdiveSibigrapiGuided8(architecture.Architecture):
     def __init__(self):
         parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]

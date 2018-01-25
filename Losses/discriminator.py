@@ -109,72 +109,17 @@ class DiscriminatorLoss(loss.Loss):
             return tf.maximum(0.1 * connect, connect)
 
         with tf.variable_scope("discriminator", reuse=None):
-            # Input Layer
-            #weights = tf.get_variable(shape=[3, 3, 3, 64], name="weights1",
-            #                          initializer=tf.uniform_unit_scaling_initializer(factor=0.01))
-            #biases = tf.Variable(tf.constant(0.01, shape=[64]))
-            #conv = tf.nn.conv2d(target_output, weights, strides=[1, 1, 1, 1],
-            #                    padding="SAME") + biases
-            #leaky = tf.maximum(0.1 * conv, conv)
-
-            # Discriminator Layers
-            #layer1 = discriminator_layer(leaky, "A", 64, 64, 2, training=True)
-            #layer2 = discriminator_layer(layer1, "B", 128, 64, 1, training=True)
-            #layer3 = discriminator_layer(layer2, "C", 128, 128, 2, training=True)
-            #layer4 = discriminator_layer(layer3, "D", 256, 128, 1, training=True)
-            #layer5 = discriminator_layer(layer4, "E", 256, 256, 2, training=True)
-            #layer6 = discriminator_layer(layer5, "F", 512, 256, 2, training=True)
-            #layer7 = discriminator_layer(layer6, "G", 512, 512, 2, training=True)
-            #layer8 = discriminator_layer(layer7, "H", 512, 512, 2, training=True)
-
-            # Output Layer
-            #shape = int(np.prod(layer8.get_shape()[1:]))
-            #flat = tf.reshape(layer8, [-1, shape])
-            #weights = tf.get_variable(shape=[shape, 1], name="weights2", dtype=tf.float32,
-            #                          initializer=tf.truncated_normal_initializer(stddev=1e-1))
-            #biases = tf.get_variable(shape=[1], name="biases2", dtype=tf.float32,
-            #                         initializer=tf.constant_initializer(1.0))
-            #connect = tf.matmul(flat, weights) + biases
-
-            #self.disc_gt = tf.maximum(0.1 * connect, connect)
             self.disc_gt = discriminator_network(target_output)
 
         with tf.variable_scope("discriminator", reuse=True):
-            # Input Layer
-            # weights = tf.get_variable(shape=[3, 3, 3, 64], name="weights1",
-            #                           initializer=tf.uniform_unit_scaling_initializer(factor=0.01))
-            # biases = tf.Variable(tf.constant(0.01, shape=[64]))
-            # conv = tf.nn.conv2d(architecture_output, weights, strides=[1, 1, 1, 1],
-            #                     padding="SAME") + biases
-            # leaky = tf.maximum(0.1 * conv, conv)
-
-            # # Discriminator Layers
-            # layer1 = discriminator_layer(leaky, "A", 64, 64, 2, training=True)
-            # layer2 = discriminator_layer(layer1, "B", 128, 64, 1, training=True)
-            # layer3 = discriminator_layer(layer2, "C", 128, 128, 2, training=True)
-            # layer4 = discriminator_layer(layer3, "D", 256, 128, 1, training=True)
-            # layer5 = discriminator_layer(layer4, "E", 256, 256, 2, training=True)
-            # layer6 = discriminator_layer(layer5, "F", 512, 256, 2, training=True)
-            # layer7 = discriminator_layer(layer6, "G", 512, 512, 2, training=True)
-            # layer8 = discriminator_layer(layer7, "H", 512, 512, 2, training=True)
-
-            # # Output Layer
-            # shape = int(np.prod(layer8.get_shape()[1:]))
-            # flat = tf.reshape(layer8, [-1, shape])
-            # weights = tf.get_variable(shape=[shape, 1], name="weights2", dtype=tf.float32,
-            #                           initializer=tf.truncated_normal_initializer(stddev=1e-1))
-            # biases = tf.get_variable(shape=[1], dtype=tf.float32, name="biases2",
-            #                          initializer=tf.constant_initializer(1.0))
-            # connect = tf.matmul(flat, weights) + biases
-
-            #self.disc_out = tf.maximum(0.1 * connect, connect)
             self.disc_out = discriminator_network(architecture_output)
 
         # Network Loss
-        disc_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-             logits=self.disc_out, labels=tf.ones_like(self.disc_out)))
+        #loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        #     logits=self.disc_out, labels=tf.ones_like(self.disc_out)))
+        loss = tf.reduce_mean(-tf.log(self.disc_out + 1e-12))
 
-        return disc_loss
+        return loss
 
     def train(self, optimizer_imp):
         """This method returns the training operation of the network.
@@ -188,15 +133,18 @@ class DiscriminatorLoss(loss.Loss):
         Returns:
             The operation to run to optimize the discriminator network.
         """
-        disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model/discriminator")
-        print(disc_vars)
+        #disc_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model/discriminator")
+        disc_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope="model/discriminator")
 
         # Discriminator Loss
-        disc_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-             logits=self.disc_gt, labels=tf.ones_like(self.disc_gt)), name="disc_real_loss")
-        disc_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-             logits=self.disc_out, labels=tf.zeros_like(self.disc_out)), name="disc_fake_loss")
-        disc_error = tf.add(disc_real, disc_fake)
+        #disc_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        #     logits=self.disc_gt, labels=tf.ones_like(self.disc_gt)), name="disc_real_loss")
+        #disc_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        #     logits=self.disc_out, labels=tf.zeros_like(self.disc_out)), name="disc_fake_loss")
+        #disc_loss = tf.add(disc_fake, disc_real)
+        disc_fake = tf.log(1 - self.disc_out + 1e-12)
+        disc_real = tf.log(self.disc_gt + 1e-12)
+        disc_loss = tf.reduce_mean(-(disc_fake + disc_real))
 
         # Add To Summary
         tf.summary.scalar("discriminator_loss_real", disc_real)

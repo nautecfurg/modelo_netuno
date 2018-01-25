@@ -1,7 +1,7 @@
 {
     "train_path": "Datasets/Data/nyu/tfrecords/train/",
     "test_path": "Datasets/Data/nyu/tfrecords/test/",
-    "batch_size": 5,
+    "batch_size": 16,
     "num_epochs": 300,
     "input_size": [
         224,
@@ -18,7 +18,7 @@
         224,
         1
     ],
-    "turbidity_path": "Datasets/Data/MistDataBase",
+    "turbidity_path": "Datasets/Data/TurbidityAzul4",
     "turbidity_size": [128, 128],
     "range_max": 1.0,
     "range_min": 0.1
