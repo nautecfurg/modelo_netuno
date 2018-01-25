@@ -149,10 +149,10 @@ class DiscriminatorLoss(loss.Loss):
         # Add To Summary
         tf.summary.scalar("discriminator_loss_real", disc_real)
         tf.summary.scalar("discriminator_loss_fake", disc_fake)
-        tf.summary.scalar("discriminator_loss", disc_error)
+        tf.summary.scalar("discriminator_loss", disc_loss)
 
         # Optimization
-        disc_train = optimizer_imp.minimize(disc_error, var_list=disc_vars)
+        disc_train = optimizer_imp.minimize(disc_loss, var_list=disc_vars)
         return disc_train
 
     def trainable(self):
