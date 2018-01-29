@@ -2,7 +2,7 @@
     "train_path": "Datasets/Data/nyu/tfrecords/train/",
     "test_path": "Datasets/Data/nyu/tfrecords/test/",
     "batch_size": 16,
-    "num_epochs": 300,
+    "num_epochs": 100,
     "input_size": [
         224,
         224,
