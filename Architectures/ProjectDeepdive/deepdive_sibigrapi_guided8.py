@@ -65,7 +65,7 @@ class DeepdiveSibigrapiGuided8(architecture.Architecture):
 
         guided_list.append(sample2)
         guided_plus_skip = tf.concat(guided_list, 3)
-        conv3 = tf.contrib.layers.conv2d(inputs=guided_plus_skip, num_outputs=3, kernel_size=[3, 3],
+        conv3 = tf.contrib.layers.conv2d(inputs=guided_plus_skip, num_outputs=3, kernel_size=[1, 1],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=None,
                                          activation_fn=None)
