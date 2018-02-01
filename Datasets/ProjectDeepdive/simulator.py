@@ -4,7 +4,8 @@ import glob
 from PIL import Image
 
 def acquireProperties(turbidity_path, turbidity_size, batch_size, range_min, range_max, sess):
-    t_imgs_names = glob.glob(turbidity_path + "/*.jpg")
+    t_imgs_names = glob.glob(turbidity_path + "/*.jpg") +\
+                   glob.glob(turbidity_path + "/*.png") 
     t_batch_size = len(t_imgs_names)
     turbidities = np.empty((t_batch_size,) + turbidity_size + (3,))
     for i in range(t_batch_size):

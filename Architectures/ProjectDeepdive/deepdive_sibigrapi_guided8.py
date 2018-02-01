@@ -5,7 +5,7 @@ import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
 import Architectures.Layers.guidedfilter_color_trainable_test as gct
 
-class DeepdiveSibigrapiGuided7(architecture.Architecture):
+class DeepdiveSibigrapiGuided8(architecture.Architecture):
     def __init__(self):
         parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]
@@ -45,7 +45,7 @@ class DeepdiveSibigrapiGuided7(architecture.Architecture):
             
             with tf.variable_scope("guided",reuse=reuse):
                 brelu_layer =tf.expand_dims(brelu[:,:,:,i], -1) 
-                guided_layer = gct.guidedfilter_color_treinable(sample, brelu_layer, r=20, eps=10**-3)
+                guided_layer = gct.guidedfilter_color_treinable(sample, brelu_layer, r=20, eps=10**-6)
                 guided_list.append(guided_layer)
 
         guided_list2 = []
@@ -57,7 +57,7 @@ class DeepdiveSibigrapiGuided7(architecture.Architecture):
             
             with tf.variable_scope("guided2",reuse=reuse):
                 brelu_layer2 =tf.expand_dims(brelu[:,:,:,i], -1) 
-                guided_layer2 = gct.guidedfilter_color_treinable(sample, brelu_layer2, r=20, eps=10**-3)
+                guided_layer2 = gct.guidedfilter_color_treinable(sample, brelu_layer2, r=20, eps=10**-6)
                 guided_list2.append(guided_layer2)
         guided2 = tf.concat(guided_list2, 3)
 
@@ -65,7 +65,7 @@ class DeepdiveSibigrapiGuided7(architecture.Architecture):
 
         guided_list.append(sample2)
         guided_plus_skip = tf.concat(guided_list, 3)
-        conv3 = tf.contrib.layers.conv2d(inputs=guided_plus_skip, num_outputs=3, kernel_size=[3, 3],
+        conv3 = tf.contrib.layers.conv2d(inputs=guided_plus_skip, num_outputs=3, kernel_size=[1, 1],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=None,
                                          activation_fn=None)

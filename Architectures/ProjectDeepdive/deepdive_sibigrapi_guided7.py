@@ -45,7 +45,7 @@ class DeepdiveSibigrapiGuided7(architecture.Architecture):
             
             with tf.variable_scope("guided",reuse=reuse):
                 brelu_layer =tf.expand_dims(brelu[:,:,:,i], -1) 
-                guided_layer = gct.guidedfilter_color_treinable(sample, brelu_layer, r=20, eps=10**-3)
+                guided_layer = gct.guidedfilter_color_treinable(sample, brelu_layer, r=20, eps=10**-6)
                 guided_list.append(guided_layer)
 
         guided_list.append(sample)
