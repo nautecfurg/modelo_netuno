@@ -1,4 +1,4 @@
 {
-    "weights_file": "/home/ggiacomo/Documentos/Projetos/modelo_netuno/Losses/vgg16_weights.npz",
+    "weights_file": "Losses/vgg16_weights.npz",
     "loss_layer": "relu21"
 }

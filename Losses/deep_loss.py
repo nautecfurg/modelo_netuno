@@ -45,7 +45,7 @@ class DeepLoss(loss.Loss):
         Returns:
             The value of the deep loss.
         """
-        #return self.mse_loss.evaluate(architecture_output, target_output) + self.discriminator_loss.evaluate(architecture_output, target_output) / 2.0
+        #return self.mse_loss.evaluate(architecture_output, target_output) + 0.001 * self.discriminator_loss.evaluate(architecture_output, target_output)
         return self.perceptual_loss.evaluate(architecture_output, target_output) + 0.001 * self.discriminator_loss.evaluate(architecture_output, target_output)
 
     def train(self, optimizer_imp):
