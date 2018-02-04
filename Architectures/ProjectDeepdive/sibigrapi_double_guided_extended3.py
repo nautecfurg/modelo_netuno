@@ -3,7 +3,7 @@ import tensorflow as tf
 import Architectures.Layers.inception_resnet_a as ira
 import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
-import Architectures.Layers.guidedfilter_color_trainable_test as gct
+import Architectures.Layers.guidedfilter_color_trainable as gct
 
 class SibigrapiDoubleGuidedExtended3(architecture.Architecture):
     def __init__(self):
