@@ -3,7 +3,6 @@ import tensorflow as tf
 
 import Losses.discriminator as discriminator
 import Losses.feature_loss as feature_loss
-import Losses.mse as mse
 
 import loss
 import optimizer
@@ -28,11 +27,10 @@ class DeepLoss(loss.Loss):
         self.config_dict = self.open_config(parameters_list)
 
         # Initialize Losses
-        #self.mse_loss = mse.MSE()
         self.discriminator_loss = discriminator.DiscriminatorLoss()
         self.perceptual_loss = feature_loss.FeatureLoss()
 
-    def evaluate(self, architecture_output, target_output):
+    def evaluate(self, architecture_input, architecture_output, target_output):
         """This method evaluates the loss for the given image and it's ground-truth.
 
         The method models a discriminator neural network mixed with Feature Loss or MSE.
@@ -44,9 +42,12 @@ class DeepLoss(loss.Loss):
 
         Returns:
             The value of the deep loss.
+            :param architecture_input:
         """
-        #return self.mse_loss.evaluate(architecture_output, target_output) + 0.001 * self.discriminator_loss.evaluate(architecture_output, target_output)
-        return self.perceptual_loss.evaluate(architecture_output, target_output) + 0.001 * self.discriminator_loss.evaluate(architecture_output, target_output)
+        return self.perceptual_loss.evaluate(architecture_input, architecture_output,
+                                             target_output) + 0.5 * self.discriminator_loss.evaluate(architecture_input,
+                                                                                                     architecture_output,
+                                                                                                     target_output)
 
     def train(self, optimizer_imp):
         """This method returns the training operation of the network.

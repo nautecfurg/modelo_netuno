@@ -4,7 +4,7 @@ class SSIM(loss.Loss):
     def __init__(self):
         parameters_list = []
         self.config_dict = self.open_config(parameters_list)
-    def evaluate(self, architecture_output, target_output):
+    def evaluate(self, architecture_input, architecture_output, target_output):
 
         C1 = 6.5025
         C2 = 58.5225

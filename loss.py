@@ -6,7 +6,7 @@ import base
 class Loss(base.Base):
 
     @abc.abstractmethod
-    def evaluate(self, architecture_output, target_output):
+    def evaluate(self, architecture_input, architecture_output, target_output):
         """This is a abstract method for defining loss functions.
 
         Each loss must implement this method. Depending on the

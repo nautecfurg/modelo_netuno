@@ -80,7 +80,7 @@ class FeatureLoss(loss.Loss):
             for i, k in enumerate(keys):
                 session.run(parameters[i].assign(weights[k]))
 
-    def evaluate(self, architecture_output, target_output):
+    def evaluate(self, architecture_input, architecture_output, target_output):
         """This function creates the structure of the feature loss neural network.
 
         The function creates a VGG16 neural network for calculating the feature loss in a
@@ -94,6 +94,7 @@ class FeatureLoss(loss.Loss):
 
         Returns:
             The result of the feature loss, which is a tensor filled with floats.
+            :param architecture_input:
         """
         loss_value = 0.0
         loss_parameters = []
