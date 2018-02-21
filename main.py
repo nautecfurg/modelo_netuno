@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import re
 
 import numpy as np
 import tensorflow as tf
@@ -22,12 +23,12 @@ import Losses
 import optimizer
 import Optimizers
 import utils
-from visualization_utils import put_features_on_grid
-
+from visualization_utils import *
+from activation_maximization import maximize_activation
 
 HELP_MSG = """usage: python main.py [-h] [-m MODE] [-a ARCHITECTURE] [-d DATASET]
            [-g DATASET_MANAGER] [-l LOSS] [-o OPTIMIZER] [-e EVALUATE] [-p EXECUTION_PATH]
-           [--evaluate_path EVALUATE_PATH] [--visualize_keys "KEY1;KEY2;...;KEYN"]
+           [--evaluate_path EVALUATE_PATH] [--visualize_keys "KEY1,KEY2,...,KEYN"]
 optional arguments
     -h, --help                              show this help message and exit
     -m, --mode MODE                         specifies one of the possible modes (train,
@@ -465,7 +466,7 @@ def run_visualization(opt_values):
         # Add ops to save and restore all the variables.
         saver = tf.train.Saver()
         # Add ops to save and restore all the variables.
-        sess = tf.Session()
+        sess = tf.InteractiveSession()
 
         # Initialize the variables (the trained variables and the
         # epoch counter).
@@ -491,7 +492,7 @@ def run_visualization(opt_values):
             layer_avgs=json.load(outfile)
             outfile.close()
 
-        key_list=opt_values['visualize_keys'].split(';')
+        key_list=re.split("[,; ]",opt_values['visualize_keys'])
         for k in key_list:
             layer=architecture_imp.get_layer(k)           
             layer_grid=put_features_on_grid(layer)
@@ -499,7 +500,27 @@ def run_visualization(opt_values):
             layer_avgs[k]=[]
             layer_avg_ops.append(tf.reduce_mean(layer,axis=(1,2)))
 
+        input_size=(224, 224, 3)
         try:
+
+            print("Running Activation Maximization")
+            for key in key_list:
+              print("Layer "+key)	
+              ft=architecture_imp.get_layer(key)
+              n_channels=ft.get_shape()[3]
+              opt_grid=np.empty((1,)+input_size+(n_channels,))    
+              for ch in range(n_channels):
+                print("Channel "+str(ch))
+                opt_output=maximize_activation(input_size, architecture_input, ft[:,:,:,ch])
+                opt_output -= opt_output.min()
+                opt_output *= (255/(opt_output.max()+0.0001))
+                opt_grid[0,:,:,:,ch]=opt_output
+              opt_grid_name=key+"_maximization"
+              opt_grid_img=put_grads_on_grid(opt_grid.astype(np.float32))
+              opt_grid_summary=tf.summary.image(opt_grid_name, opt_grid_img)
+              opt_grid_summary_str=sess.run(opt_grid_summary)
+              visualize_writer.add_summary(opt_grid_summary_str,0)
+            print("Done")
 
             while True:
                 summaries = sess.run(layer_summaries)
