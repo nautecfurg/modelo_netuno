@@ -28,7 +28,7 @@ from activation_maximization import maximize_activation
 
 HELP_MSG = """usage: python main.py [-h] [-m MODE] [-a ARCHITECTURE] [-d DATASET]
            [-g DATASET_MANAGER] [-l LOSS] [-o OPTIMIZER] [-e EVALUATE] [-p EXECUTION_PATH]
-           [--evaluate_path EVALUATE_PATH] [--visualize_keys "KEY1,KEY2,...,KEYN"]
+           [--evaluate_path EVALUATE_PATH] [--visualize_layers "KEY1,KEY2,...,KEYN"]
 optional arguments
     -h, --help                              show this help message and exit
     -m, --mode MODE                         specifies one of the possible modes (train,
@@ -50,7 +50,7 @@ optional arguments
                                             are located
     -p, --execution_path EXECUTION_PATH     specifies an execution path and it is required
                                             only in restore and visualize modes
-    --visualize_keys "KEY1;KEY2;...;KEYN"   a list of layers to be visualized, used only
+    --visualize_layers "KEY1;KEY2;...;KEYN"   a list of layers to be visualized, used only
                                             in visualize mode
 """
 
@@ -70,7 +70,7 @@ def process_args(argv):
     try:
         long_opts = ["help", "architecture=", "dataset=",
                      "dataset_manager=", "loss=", "execution_path=",
-                     "optimizer=", "evaluate_path=", "evaluate=", "visualize_keys="]
+                     "optimizer=", "evaluate_path=", "evaluate=", "visualize_layers="]
         opts, _ = getopt.getopt(argv, "ha:d:m:g:l:p:o:e", long_opts)
         if opts == []:
             print(HELP_MSG)
@@ -84,10 +84,10 @@ def process_args(argv):
             print(HELP_MSG)
             sys.exit()
         elif opt in ("-m", "--mode"):
-            if arg in ('train', 'evaluate', 'restore', 'dataset_manage', 'visualize'):
+            if arg in ('train', 'evaluate', 'restore', 'dataset_manage', 'visualize', 'activation_maximization'):
                 opt_values['execution_mode'] = arg
             else:
-                print(arg + 'is not a possible execution mode')
+                print(arg + ' is not a possible execution mode')
 
                 sys.exit(2)
         elif opt in ("-a", "--architecture"):
@@ -118,8 +118,8 @@ def process_args(argv):
         elif opt in ("-o", "--optimizer"):
             opt_values['optimizer_name'] = \
                         utils.arg_validation(arg, optimizer.Optimizer)
-        elif opt == "--visualize_keys":
-            opt_values['visualize_keys'] = arg
+        elif opt == "--visualize_layers":
+            opt_values['visualize_layers'] = arg
 
 
     check_needed_parameters(opt_values)
@@ -147,7 +147,10 @@ def check_needed_parameters(parameter_values):
         needed_parameters = ["dataset_manager_name"]
     elif parameter_values["execution_mode"] == "visualize":
         needed_parameters = ["architecture_name", "dataset_name", "execution_path",
-                             "visualize_keys"]
+                             "visualize_layers"]
+    elif parameter_values["execution_mode"] == "activation_maximization":
+        needed_parameters = ["architecture_name", "execution_path",
+                             "visualize_layers"]
 
     else:
         print("Parameters list must contain an execution_mode.")
@@ -455,7 +458,7 @@ def run_visualization(opt_values):
         architecture_input, target_output = dataset_imp.next_batch_train(0)
 
         with tf.variable_scope("model"):
-            architecture_output = architecture_imp.prediction(architecture_input, training=True)
+            architecture_output = architecture_imp.prediction(architecture_input, training=False)
 
         visualize_summary_dir=os.path.join(summary_dir, "Visualize_"+dataset_name)
         visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
@@ -492,7 +495,7 @@ def run_visualization(opt_values):
             layer_avgs=json.load(outfile)
             outfile.close()
 
-        key_list=re.split("[,; ]",opt_values['visualize_keys'])
+        key_list=re.split("[,; ]",opt_values['visualize_layers'])
         for k in key_list:
             layer=architecture_imp.get_layer(k)           
             layer_grid=put_features_on_grid(layer)
@@ -500,27 +503,7 @@ def run_visualization(opt_values):
             layer_avgs[k]=[]
             layer_avg_ops.append(tf.reduce_mean(layer,axis=(1,2)))
 
-        input_size=(224, 224, 3)
         try:
-
-            print("Running Activation Maximization")
-            for key in key_list:
-              print("Layer "+key)	
-              ft=architecture_imp.get_layer(key)
-              n_channels=ft.get_shape()[3]
-              opt_grid=np.empty((1,)+input_size+(n_channels,))    
-              for ch in range(n_channels):
-                print("Channel "+str(ch))
-                opt_output=maximize_activation(input_size, architecture_input, ft[:,:,:,ch])
-                opt_output -= opt_output.min()
-                opt_output *= (255/(opt_output.max()+0.0001))
-                opt_grid[0,:,:,:,ch]=opt_output
-              opt_grid_name=key+"_maximization"
-              opt_grid_img=put_grads_on_grid(opt_grid.astype(np.float32))
-              opt_grid_summary=tf.summary.image(opt_grid_name, opt_grid_img)
-              opt_grid_summary_str=sess.run(opt_grid_summary)
-              visualize_writer.add_summary(opt_grid_summary_str,0)
-            print("Done")
 
             while True:
                 summaries = sess.run(layer_summaries)
@@ -537,7 +520,97 @@ def run_visualization(opt_values):
             with open(json_file_path, 'w') as outfile:
                 json.dump(layer_avgs, outfile)
             
+def run_activation_maximization(opt_values):
+    """
+    Runs the visualization
 
+    This function is responsible for instanciating dataset, architecture
+
+    Args:
+        opt_values: dictionary containing parameters as keys and arguments as values.
+
+    """
+    # Get architecture, dataset and loss name
+    arch_name = opt_values['architecture_name']
+    
+    execution_dir = opt_values["execution_path"]
+    model_dir = os.path.join(execution_dir, "Model")
+
+    summary_dir = os.path.join(execution_dir, "Summary")
+    if not os.path.isdir(summary_dir):
+        os.makedirs(summary_dir)
+
+    actv_max_input_size=(224, 224, 3)
+    step_size=1
+    noise=True
+    actv_max_iters=100
+    blur_every=4
+    blur_width=1
+    lap_norm_levels=5
+    tv_lambda=0
+    tv_beta=2.0
+
+    # Get implementations
+    architecture_imp = utils.get_implementation(architecture.Architecture, arch_name)
+
+    # Tell TensorFlow that the model will be built into the default Graph.
+    graph = tf.Graph()
+    with graph.as_default():
+        # Input and target output pairs.
+        architecture_input = tf.placeholder(tf.float32, shape=(1,)+actv_max_input_size)
+
+        with tf.variable_scope("model"):
+            architecture_output = architecture_imp.prediction(architecture_input, training=False)
+
+        visualize_summary_dir=os.path.join(summary_dir, "ActivationMaximization")
+        visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
+
+        # # The op for initializing the variables.
+        init_op = tf.group(tf.global_variables_initializer(),
+                           tf.local_variables_initializer())
+        # Add ops to save and restore all the variables.
+        saver = tf.train.Saver()
+        # Add ops to save and restore all the variables.
+        sess = tf.InteractiveSession()
+
+        # Initialize the variables (the trained variables and the
+        # epoch counter).
+        sess.run(init_op)
+
+        # Restore variables from disk.
+        model_file_path = os.path.join(model_dir, "model.ckpt")
+        saver.restore(sess, model_file_path)
+        print("Model restored.")
+
+        tensorboard_command=get_tensorboard_command(visualize=visualize_summary_dir)
+        print("To run tensorboard, execute the following command in the terminal:")
+        print(tensorboard_command)
+
+        key_list=re.split("[,; ]",opt_values['visualize_layers'])
+
+        try:
+            print("Running Activation Maximization")
+            for key in key_list:
+              print("Layer "+key)	
+              ft=architecture_imp.get_layer(key)
+              n_channels=ft.get_shape()[3]
+              opt_grid=np.empty((1,)+actv_max_input_size+(n_channels,))    
+              for ch in range(n_channels):
+                print("Channel "+str(ch))
+                opt_output=maximize_activation(actv_max_input_size, architecture_input,ft[:,:,:,ch],step_size,noise,
+                                               actv_max_iters,blur_every,blur_width,lap_norm_levels,tv_lambda,tv_beta)
+                opt_output -= opt_output.min()
+                opt_output *= (255/(opt_output.max()+0.0001))
+                opt_grid[0,:,:,:,ch]=opt_output
+              opt_grid_name=key+"_maximization"
+              opt_grid_img=put_grads_on_grid(opt_grid.astype(np.float32))
+              opt_grid_summary=tf.summary.image(opt_grid_name, opt_grid_img)
+              opt_grid_summary_str=sess.run(opt_grid_summary)
+              visualize_writer.add_summary(opt_grid_summary_str,0)
+            print("Done")
+
+        finally:
+            sess.close()                       
 
         
 
@@ -554,6 +627,8 @@ def main(opt_values):
         run_dataset_manager(opt_values)
     elif execution_mode == 'visualize':
         run_visualization(opt_values)
+    elif execution_mode == 'activation_maximization':
+        run_activation_maximization(opt_values)
 
 if __name__ == "__main__":
     OPT_VALUES = process_args(sys.argv[1:])
