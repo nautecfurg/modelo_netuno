@@ -6,6 +6,6 @@
 "blur_every": 4,
 "blur_width": 1,
 "lap_norm_levels": 5,
-"tv_lambda": 1,
+"tv_lambda": 0,
 "tv_beta": 2.0
 }
