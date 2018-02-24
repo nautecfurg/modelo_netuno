@@ -50,7 +50,7 @@ optional arguments
                                             are located
     -p, --execution_path EXECUTION_PATH     specifies an execution path and it is required
                                             only in restore and visualize modes
-    --visualize_layers "KEY1;KEY2;...;KEYN"   a list of layers to be visualized, used only
+    --visualize_layers "KEY1,KEY2,...,KEYN" a list of layers to be visualized, used only
                                             in visualize mode
 """
 
@@ -175,6 +175,64 @@ def get_tensorboard_command(train=None, test=None, visualize=None):
         return "tensorboard --logdir "+train_string+","+test_string
     elif visualize is not None:
         return "tensorboard --logdir visualize:"+visualize
+
+def load_actv_max_params():
+    parameters = {}
+    if os.path.exists('activation_maximization_config.json'):
+      print("Activation maximization configuration file found.")
+      data = json.load(open('activation_maximization_config.json'))      
+      try:
+        actv_max_input_size_str=data["actv_max_input_size"]
+        w, h, ch = re.split(",",actv_max_input_size_str)
+        parameters['actv_max_input_size']=(int(w), int(h), int(ch))
+      except KeyError:
+        parameters['actv_max_input_size']=(224, 224, 3)
+      try:
+        parameters['noise']=data["noise"]
+      except KeyError:
+        parameters['noise']=True
+      try:
+        parameters['step_size']=float(data["step_size"])
+      except KeyError:
+        parameters['step_size']=1
+      try:
+        parameters['actv_max_iters']=int(data["actv_max_iters"])
+      except KeyError:
+        parameters['actv_max_iters']=100
+      try:
+        parameters['blur_every']=int(data["blur_every"])
+      except KeyError:
+        parameters['blur_every']=4
+      try:
+        parameters['blur_width']=int(data["blur_width"])
+      except KeyError:
+        parameters['blur_width']=1
+      try:
+        parameters['lap_norm_levels']=int(data["lap_norm_levels"])
+      except KeyError:
+        parameters['lap_norm_levels']=5
+      try:
+        parameters['tv_lambda']=float(data["tv_lambda"])
+      except KeyError:
+        parameters['tv_lambda']=0
+      try:
+        parameters['tv_beta']=float(data["tv_beta"])
+      except KeyError:
+        parameters['tv_beta']=2.0       
+
+    else:
+      print("Activation maximization configuration file not found.")
+      print("Using default values.")
+      parameters['actv_max_input_size']=(224, 224, 3)
+      parameters['noise']=True
+      parameters['step_size']=1
+      parameters['actv_max_iters']=100
+      parameters['blur_every']=4
+      parameters['blur_width']=1
+      parameters['lap_norm_levels']=5
+      parameters['tv_lambda']=0
+      parameters['tv_beta']=2.0
+    return parameters
 
 def training(loss_op, optimizer_imp):
     """Sets up the training Ops.
@@ -540,15 +598,17 @@ def run_activation_maximization(opt_values):
     if not os.path.isdir(summary_dir):
         os.makedirs(summary_dir)
 
-    actv_max_input_size=(224, 224, 3)
-    step_size=1
-    noise=True
-    actv_max_iters=100
-    blur_every=4
-    blur_width=1
-    lap_norm_levels=5
-    tv_lambda=0
-    tv_beta=2.0
+    # read activation maximization parameters from configuration file
+    actv_max_params=load_actv_max_params()
+    actv_max_input_size=actv_max_params['actv_max_input_size']
+    noise=actv_max_params['noise']
+    step_size=actv_max_params['step_size']
+    actv_max_iters=actv_max_params['actv_max_iters']
+    blur_every=actv_max_params['blur_every']
+    blur_width=actv_max_params['blur_width']
+    lap_norm_levels=actv_max_params['lap_norm_levels']
+    tv_lambda=actv_max_params['tv_lambda']
+    tv_beta=actv_max_params['tv_lambda']
 
     # Get implementations
     architecture_imp = utils.get_implementation(architecture.Architecture, arch_name)
@@ -562,7 +622,20 @@ def run_activation_maximization(opt_values):
         with tf.variable_scope("model"):
             architecture_output = architecture_imp.prediction(architecture_input, training=False)
 
-        visualize_summary_dir=os.path.join(summary_dir, "ActivationMaximization")
+        summary_name="ActivationMaximization"
+        if(noise):
+          summary_name+="Noise"
+        else:
+          summary_name+="NoNoise"
+        summary_name+="Step"+str(step_size)
+        summary_name+="Iters"+str(actv_max_iters)
+        summary_name+="BlurEvery"+str(blur_every)
+        summary_name+="BlurWidth"+str(blur_width)
+        summary_name+="LapNorm"+str(lap_norm_levels)
+        summary_name+="TVlambda"+str(tv_lambda)
+        summary_name+="TVbeta"+str(tv_beta)
+
+        visualize_summary_dir=os.path.join(summary_dir, summary_name)
         visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
 
         # # The op for initializing the variables.
@@ -597,7 +670,7 @@ def run_activation_maximization(opt_values):
               opt_grid=np.empty((1,)+actv_max_input_size+(n_channels,))    
               for ch in range(n_channels):
                 print("Channel "+str(ch))
-                opt_output=maximize_activation(actv_max_input_size, architecture_input,ft[:,:,:,ch],step_size,noise,
+                opt_output=maximize_activation(actv_max_input_size, architecture_input,ft[:,:,:,ch],noise,step_size,
                                                actv_max_iters,blur_every,blur_width,lap_norm_levels,tv_lambda,tv_beta)
                 opt_output -= opt_output.min()
                 opt_output *= (255/(opt_output.max()+0.0001))
@@ -607,7 +680,6 @@ def run_activation_maximization(opt_values):
               opt_grid_summary=tf.summary.image(opt_grid_name, opt_grid_img)
               opt_grid_summary_str=sess.run(opt_grid_summary)
               visualize_writer.add_summary(opt_grid_summary_str,0)
-            print("Done")
 
         finally:
             sess.close()                       

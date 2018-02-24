@@ -37,7 +37,7 @@ def tv_norm(x, beta):
   norm=tf.reduce_sum(tf.pow((p1+p2),beta/2.0))
   return norm
 
-def maximize_activation(input_size, x, ft_map, step=1, noise=True, iters=100, blur_every=4, blur_width=1, lap_levels=5, tv_lambda=0, tv_beta=2.0):
+def maximize_activation(input_size, x, ft_map, noise=True, step=1, iters=100, blur_every=4, blur_width=1, lap_levels=5, tv_lambda=0, tv_beta=2.0):
 
  images = np.empty((1,)+input_size)
  initial_img = np.zeros(input_size) + 0.5
