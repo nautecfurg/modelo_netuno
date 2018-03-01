@@ -32,36 +32,40 @@ def lap_normalize(img, n_levels=1):
     return img[0,:,:,:]
 
 def tv_norm(x, beta):
-  p1=tf.square(x[:,1:,:-1,:]-x[:,:-1,:-1,:])
-  p2=tf.square(x[:,:-1,1:,:]-x[:,:-1,:-1,:])
-  norm=tf.reduce_sum(tf.pow((p1+p2),beta/2.0))
-  return norm
+    '''Computes the Total Variation Norm.'''
+    p1=tf.square(x[:,1:,:-1,:]-x[:,:-1,:-1,:])
+    p2=tf.square(x[:,:-1,1:,:]-x[:,:-1,:-1,:])
+    norm=tf.reduce_sum(tf.pow((p1+p2),beta/2.0))
+    return norm
 
 def maximize_activation(input_size, x, ft_map, noise=True, step=1, iters=100, blur_every=4, blur_width=1, lap_levels=5, tv_lambda=0, tv_beta=2.0):
+ '''Runs activation maximization'''
 
- images = np.empty((1,)+input_size)
- initial_img = np.zeros(input_size) + 0.5
- if noise:
-  initial_img+=np.random.uniform(low=-0.5, high=0.5, size=input_size)
-# img_noise = np.zeros(input_size) + 0.5
- sess = tf.get_default_session()
  t_score = tf.reduce_mean(ft_map)
  tv_x=tv_norm(x,tv_beta)
  t_grad = tf.gradients(t_score-tv_lambda*tv_x, x)[0]
- # normalizing the gradient, so the same step size should work for different layers and networks
+ # laplacian pyramid gradient normalization
  grad_norm=lap_normalize(t_grad[0,:,:,:], lap_levels)
 
+ # crates a gray image
+ initial_img = np.zeros(input_size) + 0.5
+ if noise:
+  # adds noise to the initial image
+  initial_img+=np.random.uniform(low=-0.5, high=0.5, size=input_size)
 
+ images = np.empty((1,)+input_size)
  images[0] = initial_img.copy()
+
+ sess = tf.get_default_session()
  for i in range(1,iters+1):
   feedDict={x: images}
-  g, score = sess.run([grad_norm, t_score], feed_dict=feedDict) 
+  g, score = sess.run([grad_norm, t_score], feed_dict=feedDict)
   images[0] = images[0]+g*step
-  #gaussian blur
+  # gaussian blur
   if blur_every:
    if i%blur_every==0:
     images[0] = gaussian_filter(images[0], sigma=blur_width)
-# useless
+# useless regularization methods
 #  l2 decay
 #  if config.decay:
 #   images[0] = images[0]*(1-config.decay)
