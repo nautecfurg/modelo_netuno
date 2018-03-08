@@ -5,7 +5,6 @@ import Losses.discriminator as discriminator
 import Losses.feature_loss as feature_loss
 
 import loss
-import optimizer
 
 class DeepLoss(loss.Loss):
     """This class is responsible for creating the DeepDive loss network, which is a
@@ -23,8 +22,12 @@ class DeepLoss(loss.Loss):
         Returns:
             Nothing.
         """
-        parameters_list = []
-        self.config_dict = self.open_config(parameters_list)
+        parameters_list = ["perceptual_weight", "discriminator_weight"]
+        self.open_config(parameters_list)
+
+        # Get JSON Values
+        self.perceptual_weight = self.config_dict["perceptual_weight"]
+        self.discriminator_weight = self.config_dict["discriminator_weight"]
 
         # Initialize Losses
         self.discriminator_loss = discriminator.DiscriminatorLoss()
@@ -36,18 +39,22 @@ class DeepLoss(loss.Loss):
         The method models a discriminator neural network mixed with Feature Loss or MSE.
 
         Args:
+            architecture_input: The image that's input in the generator network.
+
             architecture_output: The image to input in the deep loss.
 
             target_output: The ground-truth image to input in the deep loss.
 
         Returns:
             The value of the deep loss.
-            :param architecture_input:
         """
-        return self.perceptual_loss.evaluate(architecture_input, architecture_output,
-                                             target_output) + 0.5 * self.discriminator_loss.evaluate(architecture_input,
-                                                                                                     architecture_output,
-                                                                                                     target_output)
+        return \
+            self.perceptual_weight * self.perceptual_loss.evaluate(architecture_input,
+                                                                   architecture_output,
+                                                                   target_output) + \
+            self.discriminator_weight * self.discriminator_loss.evaluate(architecture_input,
+                                                                         architecture_output,
+                                                                         target_output)
 
     def train(self, optimizer_imp):
         """This method returns the training operation of the network.

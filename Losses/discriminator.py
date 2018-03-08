@@ -21,8 +21,14 @@ class DiscriminatorLoss(loss.Loss):
         Returns:
             Nothing.
         """
-        parameters_list = []
-        self.config_dict = self.open_config(parameters_list)
+        parameters_list = ["learning_rate", "beta1", "beta2", "epsilon"]
+        self.open_config(parameters_list)
+
+        # Get JSON Values
+        self.learning_rate = self.config_dict["learning_rate"]
+        self.beta1 = self.config_dict["beta1"]
+        self.beta2 = self.config_dict["beta2"]
+        self.epsilon = self.config_dict["epsilon"]
 
         # Define defaults
         self.disc_gt = 0.0
@@ -37,6 +43,8 @@ class DiscriminatorLoss(loss.Loss):
         and allows for the calculation of the loss.
 
         Args:
+            architecture_input: The image that's input in the generator network.
+
             architecture_output: The image to input in the discriminator network.
 
             target_output: The ground-truth image to input in the discriminator network.
@@ -122,7 +130,8 @@ class DiscriminatorLoss(loss.Loss):
         tf.summary.scalar("discriminator_loss", disc_loss)
 
         # Optimization
-        disc_opt = tf.train.AdamOptimizer(learning_rate=1e-6, beta1=0.9, beta2=0.999, epsilon=1e-8)
+        disc_opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=self.beta1,
+                                          beta2=self.beta2, epsilon=self.epsilon)
         disc_train = disc_opt.minimize(disc_loss, var_list=disc_vars)
         return disc_train
 

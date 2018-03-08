@@ -366,7 +366,6 @@ def run_training(opt_values):
         step = sess.run(global_step)
 
         try:
-
             while True:
                 start_time = time.time()
                 sess.run(init)
@@ -377,20 +376,14 @@ def run_training(opt_values):
                 # the list passed to sess.run() and the value tensors
                 # will be returned in the tuple from the call.
 
+                # Warning: Calling the sess.run will advance the dataset
+                # to the next batch.
                 if step % architecture_imp.get_summary_writing_period() == 0:
-                    # Train Discriminator
-                    if loss_imp.trainable():
-                        _ = sess.run([loss_tr])
-                       
-                    # Train Generator
-                    loss_value, _, summary = sess.run([loss_op, train_op, merged])
+                    # Train Discriminator & Generator
+                    loss_value, _, _, summary = sess.run([loss_op, loss_tr, train_op, merged])
                 else:
-                    # Train Discriminator
-                    if loss_imp.trainable():
-                        _ = sess.run([loss_tr])
-                        
-                    # Train Generator
-                    loss_value, _ = sess.run([loss_op, train_op])
+                    # Train Discriminator & Generator
+                    loss_value, _, _ = sess.run([loss_op, loss_tr, train_op])
                 duration = time.time() - start_time
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     print('Step %d: loss = %.2f (%.3f sec)' % (step, np.mean(loss_value),

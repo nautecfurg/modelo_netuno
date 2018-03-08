@@ -1,0 +1,4 @@
+{
+  "perceptual_weight": 1.0,
+  "discriminator_weight": 0.5
+}
