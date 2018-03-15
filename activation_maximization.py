@@ -117,25 +117,25 @@ def maximize_activation(input_size, x, ft_map, noise=True, step=1, iters=100, bl
 
   # jitter (translation) regularization
   if jitter:
-    jitter_px=np.random.randint(low=1, high=16)
-    jitter_py=np.random.randint(low=1, high=16)
+    jitter_px=np.random.randint(low=-16, high=17)
+    jitter_py=np.random.randint(low=-16, high=17)
     tmp_img=np.roll(tmp_img, (jitter_px,jitter_py), axis=(0,1))
 
   # scaling regularization
   if scale:
     scaling_factors=[1, 0.975, 1.025, 0.95, 1.05]
-    scale=scaling_factors[np.random.randint(low=0, high=4)]
+    scale=scaling_factors[np.random.randint(low=0, high=5)]
     tmp_img=clipped_zoom(tmp_img, scale)
 
   # rotation regularization
   if rotate:
-    rotate_angle=np.random.randint(low=-5, high=5)
+    rotate_angle=np.random.randint(low=-5, high=6)
     tmp_img=im_rotate(tmp_img, rotate_angle, reshape=False)
 
   # jittering a second time
   if jitter:
-    jitter_px=np.random.randint(low=1, high=8)
-    jitter_py=np.random.randint(low=1, high=8)
+    jitter_px=np.random.randint(low=-8, high=9)
+    jitter_py=np.random.randint(low=-8, high=9)
     tmp_img=np.roll(tmp_img, (jitter_px,jitter_py), axis=(0,1))
 
   # remove padding
