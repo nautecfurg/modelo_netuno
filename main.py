@@ -225,7 +225,7 @@ def load_actv_max_params():
       try:
         parameters['jitter']=data["jitter"]
       except KeyError:
-        parameters['jitter']=False
+        parameters['jitter']=0
       try:
         parameters['scale']=data["scale"]
       except KeyError:
@@ -233,7 +233,7 @@ def load_actv_max_params():
       try:
         parameters['rotate']=data["rotate"]
       except KeyError:
-        parameters['rotate']=False    
+        parameters['rotate']=0    
 
     else:
       print("Activation maximization configuration file not found.")
@@ -247,9 +247,9 @@ def load_actv_max_params():
       parameters['lap_norm_levels']=5
       parameters['tv_lambda']=0
       parameters['tv_beta']=2.0
-      parameters['jitter']=False
+      parameters['jitter']=0
       parameters['scale']=False
-      parameters['rotate']=False
+      parameters['rotate']=0
     return parameters
 
 def training(loss_op, optimizer_imp):
@@ -630,11 +630,11 @@ def run_activation_maximization(opt_values):
     tv_lambda=actv_max_params['tv_lambda']
     # The exponent used to calculate the total variation norm.
     tv_beta=actv_max_params['tv_lambda']
-    # True for jitter (translation) regularization
+    # Maximum jitter (translation) regularization in pixels
     jitter=actv_max_params['jitter']
     # True for scale regularization
     scale=actv_max_params['scale']
-    # True for rotation regularization
+    # Maximum rotation regularization angle in degrees
     rotate=actv_max_params['rotate']
 
     # Get implementations
@@ -661,12 +661,12 @@ def run_activation_maximization(opt_values):
         summary_name+="LapNorm"+str(lap_norm_levels)
         summary_name+="TVlambda"+str(tv_lambda)
         summary_name+="TVbeta"+str(tv_beta)
-        if(jitter):
-          summary_name+="Jitter"
+        summary_name+="Jitter"+str(jitter)
         if(scale):
           summary_name+="Scaling"
-        if(rotate):
-          summary_name+="Rotation"
+        else:
+          summary_name+="NoScaling"
+        summary_name+="Rotation"+str(rotate)
 
 
 

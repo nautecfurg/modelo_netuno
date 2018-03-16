@@ -84,7 +84,7 @@ def clipped_zoom(img, zoom_factor, **kwargs):
     return out
 
 def maximize_activation(input_size, x, ft_map, noise=True, step=1, iters=100, blur_every=4, blur_width=1, lap_levels=5, 
-                                               tv_lambda=0, tv_beta=2.0, jitter=False, scale=False, rotate=False):
+                                               tv_lambda=0, tv_beta=2.0, jitter=0, scale=False, rotate=0):
  '''Runs activation maximization'''
 
  t_score = tf.reduce_mean(ft_map)
@@ -113,12 +113,12 @@ def maximize_activation(input_size, x, ft_map, noise=True, step=1, iters=100, bl
     images[0] = gaussian_filter(images[0], sigma=blur_width)
 
   # padding the input by 16 pixels to avoid edge artefacts
-  tmp_img = np.pad(images[0], ((16, 16),(16, 16),(0,0)), 'wrap')
+  tmp_img = np.pad(images[0], ((16, 16),(16, 16),(0,0)), 'reflect')
 
   # jitter (translation) regularization
   if jitter:
-    jitter_px=np.random.randint(low=-16, high=17)
-    jitter_py=np.random.randint(low=-16, high=17)
+    jitter_px=np.random.randint(low=-jitter, high=jitter+1)
+    jitter_py=np.random.randint(low=-jitter, high=jitter+1)
     tmp_img=np.roll(tmp_img, (jitter_px,jitter_py), axis=(0,1))
 
   # scaling regularization
@@ -129,13 +129,13 @@ def maximize_activation(input_size, x, ft_map, noise=True, step=1, iters=100, bl
 
   # rotation regularization
   if rotate:
-    rotate_angle=np.random.randint(low=-5, high=6)
+    rotate_angle=np.random.randint(low=-rotate, high=rotate+1)
     tmp_img=im_rotate(tmp_img, rotate_angle, reshape=False)
 
   # jittering a second time
   if jitter:
-    jitter_px=np.random.randint(low=-8, high=9)
-    jitter_py=np.random.randint(low=-8, high=9)
+    jitter_px=np.random.randint(low=-int(jitter/2), high=int(jitter/2)+1)
+    jitter_py=np.random.randint(low=-int(jitter/2), high=int(jitter/2)+1)
     tmp_img=np.roll(tmp_img, (jitter_px,jitter_py), axis=(0,1))
 
   # remove padding
