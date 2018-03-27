@@ -117,7 +117,7 @@ def put_features_on_grid(features):
     n_ch=tf.cast(tf.shape(features, out_type=tf.int32)[3], tf.float32)
     b_size=tf.shape(features, out_type=tf.int32)[0]
     square_size=tf.cast(tf.ceil(tf.sqrt(n_ch)),tf.float32)
-    z_pad=tf.cast(square_size**2-n_ch, tf.int32)
+    z_pad=tf.cast(tf.round(square_size**2-n_ch), tf.int32)
     black=tf.minimum(0.0,tf.reduce_min(features))
     pad=1+tf.cast((ix/64), tf.int32)
     square_size=tf.cast(square_size, tf.int32)
@@ -135,7 +135,7 @@ def put_kernels_on_grid(kernels):
     ix=tf.shape(kernels, out_type=tf.int32)[1]
     n_ch=tf.cast(tf.shape(kernels, out_type=tf.int32)[3], tf.float32)
     square_size=tf.cast(tf.ceil(tf.sqrt(n_ch)),tf.float32)
-    z_pad=tf.cast(square_size**2-n_ch, tf.int32)
+    z_pad=tf.cast(tf.round(square_size**2-n_ch), tf.int32)
     black=tf.minimum(0.0,tf.reduce_min(kernels))
     pad=1+tf.cast((ix/64), tf.int32)
     kernels = tf.pad(kernels, [[0,0],[0,0],[0,0],[0,z_pad]], mode='constant',constant_values=black)
@@ -155,7 +155,7 @@ def put_grads_on_grid(grads):
     ix=tf.shape(grads, out_type=tf.int32)[2]
     n_ch=tf.cast(tf.shape(grads, out_type=tf.int32)[4], tf.float32)
     square_size=tf.cast(tf.ceil(tf.sqrt(n_ch)),tf.float32)
-    z_pad=tf.cast(square_size**2-n_ch, tf.int32)
+    z_pad=tf.cast(tf.round(square_size**2-n_ch), tf.int32)
     square_size=tf.cast(square_size,tf.int32)
     black=tf.minimum(0.0,tf.reduce_min(grads))
     pad=1+tf.cast((ix/64), tf.int32)

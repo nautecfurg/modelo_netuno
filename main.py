@@ -532,8 +532,9 @@ def run_visualization(opt_values):
         # Input and target output pairs.
         architecture_input, target_output = dataset_imp.next_batch_train(0)
 
-        with tf.variable_scope("model"):
-            architecture_output = architecture_imp.prediction(architecture_input, training=False)
+        with tf.variable_scope("model", reuse=True):
+            with tf.variable_scope("architecture", reuse=tf.AUTO_REUSE):
+                architecture_output = architecture_imp.prediction(architecture_input, training=False)
 
         visualize_summary_dir=os.path.join(summary_dir, "Visualize_"+dataset_name)
         visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
@@ -651,8 +652,9 @@ def run_activation_maximization(opt_values):
     with graph.as_default():
         architecture_input = tf.placeholder(tf.float32, shape=(1,)+actv_max_input_size)
 
-        with tf.variable_scope("model"):
-            architecture_output = architecture_imp.prediction(architecture_input, training=False)
+        with tf.variable_scope("model", reuse=True):
+            with tf.variable_scope("architecture", reuse=tf.AUTO_REUSE):
+                architecture_output = architecture_imp.prediction(architecture_input, training=False)
 
         # Generates the name of the folder where the tensorboard summaries will be saved.
         summary_name="ActivationMaximization"
