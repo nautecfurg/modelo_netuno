@@ -582,8 +582,7 @@ def run_visualization(opt_values):
         try:
 
             while True:
-                summaries = sess.run(layer_summaries)
-                batch_avgs = sess.run(layer_avg_ops)
+                summaries, batch_avgs = sess.run([layer_summaries,layer_avg_ops])
                 for k, avg in zip(key_list, batch_avgs):
                     layer_avgs[k].extend(avg.tolist())
                 for summary in summaries:
