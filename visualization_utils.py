@@ -18,7 +18,7 @@ def save_optimized_image_to_disk(opt_output, channel,n_channels,key,path):
 
 def save_images_to_disk(result_imgs,input_imgs,gt_imgs, path):
     result_imgs=(np.clip(result_imgs, 0, 1) * 255).round().astype(np.uint8)
-    for j in xrange(result_imgs.shape[0]):
+    for j in range(result_imgs.shape[0]):
         im = Image.fromarray(result_imgs[j])
         file_name="output.bmp"
         im_folder=str(j).zfill(len(str(result_imgs.shape[0])))
@@ -28,7 +28,7 @@ def save_images_to_disk(result_imgs,input_imgs,gt_imgs, path):
         im.save(folder_name+"/"+file_name)
 
     input_imgs=(np.clip(input_imgs, 0, 1) * 255).round().astype(np.uint8)
-    for j in xrange(input_imgs.shape[0]):
+    for j in range(input_imgs.shape[0]):
         im = Image.fromarray(input_imgs[j])
         file_name="input.bmp"
         im_folder=str(j).zfill(len(str(input_imgs.shape[0])))
@@ -38,7 +38,7 @@ def save_images_to_disk(result_imgs,input_imgs,gt_imgs, path):
         im.save(folder_name+"/"+file_name)
 
     gt_imgs=(np.clip(gt_imgs, 0, 1) * 255).round().astype(np.uint8)
-    for j in xrange(gt_imgs.shape[0]):
+    for j in range(gt_imgs.shape[0]):
         im = Image.fromarray(gt_imgs[j])
         file_name="ground_truth.bmp"
         im_folder=str(j).zfill(len(str(gt_imgs.shape[0])))
@@ -49,11 +49,11 @@ def save_images_to_disk(result_imgs,input_imgs,gt_imgs, path):
 
 def save_feature_maps_to_disk(feature_maps, weights, deconv, feature_names,path):
     for ft, w, d, key in zip(feature_maps, weights, deconv, feature_names):
-        for l in xrange(ft.shape[3]):
+        for l in range(ft.shape[3]):
             ft_img=ft[:,:,:,l]
             ft_img = (ft_img - ft_img.min())
             ft_img*=(255/(ft_img.max()+0.0001))
-            for k in xrange(ft.shape[0]):		
+            for k in range(ft.shape[0]):		
                 ch_img=ft_img[k,:,:].astype(np.uint8) 
                 im = Image.fromarray(ch_img)
                 file_name=str(l).zfill(len(str(ft.shape[3])))+".bmp"
@@ -66,7 +66,7 @@ def save_feature_maps_to_disk(feature_maps, weights, deconv, feature_names,path)
             kernel=w.eval()
             kernel_img = (kernel - kernel.min())
             kernel_img*=(255/(kernel_img.max()+0.0001))
-            for k in xrange(kernel_img.shape[3]):
+            for k in range(kernel_img.shape[3]):
                 im = Image.fromarray(kernel_img[:,:,:,k].astype(np.uint8))
                 k_file_name="W_"+str(k).zfill(len(str(ft.shape[3])))+".bmp"
                 k_folder_name=path+"/feature_maps/"+key+"/kernels"
@@ -74,8 +74,8 @@ def save_feature_maps_to_disk(feature_maps, weights, deconv, feature_names,path)
                     os.makedirs(k_folder_name)
                 im.save(k_folder_name+"/"+k_file_name)
         if d is not None:
-            for i in xrange(d.shape[4]):
-                for j in xrange(d.shape[0]):
+            for i in range(d.shape[4]):
+                for j in range(d.shape[0]):
                     d_img=d[j,:,:,:,i]
                     d_img = (d_img-d_img.min())
                     d_img*=(255/(d_img.max()+0.0001))
@@ -91,8 +91,8 @@ def save_feature_maps_to_disk(feature_maps, weights, deconv, feature_names,path)
 
 def save_max_activations_to_disk(max_activation, feature_names,path):
     for actv, key in zip(max_activation, feature_names):
-        for ch in xrange(actv[0].shape[4]):
-            for n in xrange(actv[0].shape[0]):
+        for ch in range(actv[0].shape[4]):
+            for n in range(actv[0].shape[0]):
                 actv_img=actv[1][n,:,:,ch]
                 actv_img = (actv_img-actv_img.min())
                 actv_img*=(255/(actv_img.max()+0.0001))
@@ -176,7 +176,7 @@ def put_grads_on_grid(grads):
 #        ft_shape=ft_map.get_shape()
 #        img_shape=input_size
 #        ft_deconv=np.empty((batch_size,)+img_shape+(ft_shape[3],))
-#        for ch in xrange(ft_shape[3]):
+#        for ch in range(ft_shape[3]):
 #            score = tf.reduce_mean(ft_map[:,:,:,ch])
 #            grad = tf.gradients(score, x)[0]
 #            grad=normalize_std(grad)
