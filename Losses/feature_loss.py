@@ -94,6 +94,7 @@ class FeatureLoss(loss.Loss):
 
         Returns:
             The result of the feature loss, which is a tensor filled with floats.
+            :param architecture_input:
         """
         loss_value = 0.0
         loss_parameters = []
