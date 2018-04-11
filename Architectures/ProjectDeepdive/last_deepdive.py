@@ -4,8 +4,9 @@ import Architectures.Layers.inception_resnet_a as ira
 import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
 import Architectures.Layers.guidedfilter_color_trainable as gct
+from guided_filter_tf.guided_filter import fast_guided_filter as gf
 
-class SibigrapiDoubleGuidedExtended3(architecture.Architecture):
+class LastDeepDive(architecture.Architecture):
     def __init__(self):
         parameters_list = ['input_size', 'summary_writing_period',
                            "validation_period", "model_saving_period"]
@@ -99,8 +100,7 @@ class SibigrapiDoubleGuidedExtended3(architecture.Architecture):
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        
-
+        """
         guided4_1_list = []
         for i in range(3):
             if i == 0:
@@ -110,21 +110,19 @@ class SibigrapiDoubleGuidedExtended3(architecture.Architecture):
             
             with tf.variable_scope("guided",reuse=reuse):
                 conv4_1_layer =tf.expand_dims(conv4_1[:,:,:,i], -1) 
-<<<<<<< HEAD
                 guided4_1_layer = gct.guidedfilter_color_treinable(sample, conv4_1_layer, r=20, eps=10**-4)
-=======
-                guided4_1_layer = gct.guidedfilter_color_treinable(sample, conv4_1_layer, r=20, eps=10**-3)
->>>>>>> eba5fadb58cb5b0d37a68d7b6c68d9a547ad421b
                 guided4_1_list.append(guided4_1_layer)
 
         guided4_1 = tf.concat(guided4_1_list, 3)
+        """
+        guided4_1 = guided4_1 = gf(sample, conv4_1, r=20, eps=10**-4)
 
         conv4_2 = tf.contrib.layers.conv2d(inputs=decode4, num_outputs=3, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-
+        """
         guided4_2_list = []
         for i in range(3):
             if i == 0:
@@ -134,14 +132,12 @@ class SibigrapiDoubleGuidedExtended3(architecture.Architecture):
             
             with tf.variable_scope("guided2",reuse=reuse):
                 conv4_2_layer =tf.expand_dims(conv4_2[:,:,:,i], -1) 
-<<<<<<< HEAD
                 guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-4)
-=======
-                guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-3)
->>>>>>> eba5fadb58cb5b0d37a68d7b6c68d9a547ad421b
                 guided4_2_list.append(guided4_2_layer)
 
         guided4_2 = tf.concat(guided4_2_list, 3)
+        """
+        guided4_2 = gf(sample, conv4_2, r=20, eps=10**-4)
 
         guided4 = tf.concat([guided4_2*sample,guided4_1,sample],3)
 

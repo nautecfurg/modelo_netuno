@@ -335,7 +335,7 @@ def run_training(opt_values):
         with tf.variable_scope("model"):
             with tf.variable_scope("architecture"):
                 architecture_output = architecture_imp.prediction(architecture_input, training=True)
-            loss_op = loss_imp.evaluate(architecture_input, architecture_output, target_output)
+            loss_op = loss_imp.evaluate(architecture_output, target_output)
         train_op, global_step = training(loss_op, optimizer_imp)
 
         if loss_imp.trainable():
@@ -349,7 +349,7 @@ def run_training(opt_values):
             with tf.variable_scope("architecture", reuse=True):
                 architecture_output_test = architecture_imp.prediction(architecture_input_test,
                                                                    training=False) # TODO: false?
-            loss_op_test = loss_imp.evaluate(architecture_input_test, architecture_output_test, target_output_test)
+            loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
         test_loss = tf.summary.scalar('test_loss', tf_test_loss)
 
@@ -406,6 +406,7 @@ def run_training(opt_values):
                     else:
                         loss_value, _ = sess.run([loss_op, train_op])
                 duration = time.time() - start_time
+                print (duration)
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     print('Step %d: loss = %.2f (%.3f sec)' % (step, np.mean(loss_value),
                                                                duration))
