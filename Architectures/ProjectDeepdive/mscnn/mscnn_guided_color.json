@@ -1,0 +1,14 @@
+{
+    "input_size": [
+        224,
+        224,
+        3
+    ],
+    "summary_writing_period": 100,
+    "validation_period": 300,
+    "model_saving_period": 300,
+    "histograms_list": [],
+    "features_list": [],
+    "features_opt_list": [],
+    "use_tensorboard": true
+}

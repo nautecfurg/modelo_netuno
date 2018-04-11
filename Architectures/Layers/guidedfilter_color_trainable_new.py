@@ -49,7 +49,7 @@ def guidedfilter_color_treinable(I,p,r,eps):
     II_reshaped = tf.reshape(II, [-1] + p.get_shape().as_list()[1:3]+[9])
     var_I_reshaped = tf.nn.depthwise_conv2d(II_reshaped, w_conv9d, strides=[1, 1, 1, 1], 
                                             padding='SAME')/N
-    var_I = tf.reshape(var_I_reshaped, p.get_shape().as_list()[1:3]+[3, 3])
+    var_I = tf.reshape(var_I_reshaped, [-1] + p.get_shape().as_list()[1:3]+[3, 3])
     var_I = var_I - mean_II
 
     sigma = var_I + (tf.eye(3,batch_shape=p.get_shape()[1:3]) * eps_tf)

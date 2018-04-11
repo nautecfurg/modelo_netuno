@@ -25,10 +25,10 @@ class DatasetTurbid(dataset.Dataset):
         self.turbidity_size = tuple(self.config_dict["turbidity_size"])
         self.range_min = self.config_dict["range_min"]
         self.range_max = self.config_dict["range_max"]
-        self.sess = tf.Session()
+        sess = tf.Session()
         self.c, self.binf, self.range_array = simulator.acquireProperties(
             self.turbidity_path, self.turbidity_size, self.batch_size,
-            self.range_min, self.range_max, self.sess)
+            self.range_min, self.range_max, sess)
 
     def _parse_function(self, record):
         features = {"image_raw": tf.FixedLenFeature((), tf.string),

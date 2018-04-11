@@ -31,7 +31,7 @@ def acquireProperties(turbidity_path, turbidity_size, batch_size, range_min, ran
     binf = np.reshape(binf, [batch_size, 1, 1, 3])
 
 
-    range_step = (range_min-range_max)/(t_batch_size-1)
+    range_step = (range_min-range_max)/(t_batch_size)
     range_values = np.empty(t_batch_size)
     for i in range(t_batch_size):
         range_values[i] = (i)*range_step+range_max

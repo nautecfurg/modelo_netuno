@@ -1,0 +1,21 @@
+{
+    "train_path": "Datasets/Data/reside/tfrecords/train/",
+    "test_path": "Datasets/Data/reside/tfrecords/test/",
+    "batch_size": 16,
+    "num_epochs": 300,
+    "input_size": [
+        560,
+        420,
+        3
+    ],
+    "output_size": [
+        560,
+        420,
+        3
+    ],
+    "clear_size": [
+        560,
+        420,
+        3
+    ]
+}

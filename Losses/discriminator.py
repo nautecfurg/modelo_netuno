@@ -74,7 +74,7 @@ class DiscriminatorLoss(loss.Loss):
             output = discriminator_layer(output, 512, 3, 2, "G")
             
             # Dense Layer 1
-            output = tf.layers.flatten(output)
+            output = tf.contrib.layers.flatten(output)
             output = tf.layers.dense(output, 1024, activation=None, kernel_initializer=tf.contrib.layers.xavier_initializer())
             output = lrelu(output, 0.2)
             

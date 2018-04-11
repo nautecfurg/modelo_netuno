@@ -4,7 +4,6 @@ import sys
 
 
 class Base(metaclass=abc.ABCMeta):
-
     def verify_config(self, parameters_list, config_dict):
         for parameter in parameters_list:
             if parameter not in config_dict:
