@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import re
 
 import numpy as np
 import tensorflow as tf
@@ -22,12 +23,12 @@ import Losses
 import optimizer
 import Optimizers
 import utils
-from visualization_utils import put_features_on_grid
-
+from visualization_utils import *
+from activation_maximization import maximize_activation
 
 HELP_MSG = """usage: python main.py [-h] [-m MODE] [-a ARCHITECTURE] [-d DATASET]
            [-g DATASET_MANAGER] [-l LOSS] [-o OPTIMIZER] [-e EVALUATE] [-p EXECUTION_PATH]
-           [--evaluate_path EVALUATE_PATH] [--visualize_keys "KEY1;KEY2;...;KEYN"]
+           [--evaluate_path EVALUATE_PATH] [--visualize_layers "KEY1,KEY2,...,KEYN"]
 optional arguments
     -h, --help                              show this help message and exit
     -m, --mode MODE                         specifies one of the possible modes (train,
@@ -49,7 +50,7 @@ optional arguments
                                             are located
     -p, --execution_path EXECUTION_PATH     specifies an execution path and it is required
                                             only in restore and visualize modes
-    --visualize_keys "KEY1;KEY2;...;KEYN"   a list of layers to be visualized, used only
+    --visualize_layers "KEY1,KEY2,...,KEYN" a list of layers to be visualized, used only
                                             in visualize mode
 """
 
@@ -69,7 +70,7 @@ def process_args(argv):
     try:
         long_opts = ["help", "architecture=", "dataset=",
                      "dataset_manager=", "loss=", "execution_path=",
-                     "optimizer=", "evaluate_path=", "evaluate=", "visualize_keys="]
+                     "optimizer=", "evaluate_path=", "evaluate=", "visualize_layers="]
         opts, _ = getopt.getopt(argv, "ha:d:m:g:l:p:o:e", long_opts)
         if opts == []:
             print(HELP_MSG)
@@ -83,10 +84,10 @@ def process_args(argv):
             print(HELP_MSG)
             sys.exit()
         elif opt in ("-m", "--mode"):
-            if arg in ('train', 'evaluate', 'restore', 'dataset_manage', 'visualize'):
+            if arg in ('train', 'evaluate', 'restore', 'dataset_manage', 'visualize', 'activation_maximization'):
                 opt_values['execution_mode'] = arg
             else:
-                print(arg + 'is not a possible execution mode')
+                print(arg + ' is not a possible execution mode')
 
                 sys.exit(2)
         elif opt in ("-a", "--architecture"):
@@ -117,8 +118,8 @@ def process_args(argv):
         elif opt in ("-o", "--optimizer"):
             opt_values['optimizer_name'] = \
                         utils.arg_validation(arg, optimizer.Optimizer)
-        elif opt == "--visualize_keys":
-            opt_values['visualize_keys'] = arg
+        elif opt == "--visualize_layers":
+            opt_values['visualize_layers'] = arg
 
 
     check_needed_parameters(opt_values)
@@ -146,7 +147,10 @@ def check_needed_parameters(parameter_values):
         needed_parameters = ["dataset_manager_name"]
     elif parameter_values["execution_mode"] == "visualize":
         needed_parameters = ["architecture_name", "dataset_name", "execution_path",
-                             "visualize_keys"]
+                             "visualize_layers"]
+    elif parameter_values["execution_mode"] == "activation_maximization":
+        needed_parameters = ["architecture_name", "execution_path",
+                             "visualize_layers"]
 
     else:
         print("Parameters list must contain an execution_mode.")
@@ -171,6 +175,82 @@ def get_tensorboard_command(train=None, test=None, visualize=None):
         return "tensorboard --logdir "+train_string+","+test_string
     elif visualize is not None:
         return "tensorboard --logdir visualize:"+visualize
+
+def load_actv_max_params():
+    """This function reads the activation maximization parameters from activation_maximization_config.json.
+    If the file or some of its parameters are missing, default values will be used.
+    """
+    parameters = {}
+    if os.path.exists('activation_maximization_config.json'):
+      print("Activation maximization configuration file found.")
+      data = json.load(open('activation_maximization_config.json'))      
+      try:
+        actv_max_input_size_str=data["actv_max_input_size"]
+        w, h, ch = re.split(",",actv_max_input_size_str)
+        parameters['actv_max_input_size']=(int(w), int(h), int(ch))
+      except KeyError:
+        parameters['actv_max_input_size']=(224, 224, 3)
+      try:
+        parameters['noise']=data["noise"]
+      except KeyError:
+        parameters['noise']=True
+      try:
+        parameters['step_size']=float(data["step_size"])
+      except KeyError:
+        parameters['step_size']=1
+      try:
+        parameters['actv_max_iters']=int(data["actv_max_iters"])
+      except KeyError:
+        parameters['actv_max_iters']=100
+      try:
+        parameters['blur_every']=int(data["blur_every"])
+      except KeyError:
+        parameters['blur_every']=4
+      try:
+        parameters['blur_width']=int(data["blur_width"])
+      except KeyError:
+        parameters['blur_width']=1
+      try:
+        parameters['lap_norm_levels']=int(data["lap_norm_levels"])
+      except KeyError:
+        parameters['lap_norm_levels']=5
+      try:
+        parameters['tv_lambda']=float(data["tv_lambda"])
+      except KeyError:
+        parameters['tv_lambda']=0
+      try:
+        parameters['tv_beta']=float(data["tv_beta"])
+      except KeyError:
+        parameters['tv_beta']=2.0
+      try:
+        parameters['jitter']=data["jitter"]
+      except KeyError:
+        parameters['jitter']=0
+      try:
+        parameters['scale']=data["scale"]
+      except KeyError:
+        parameters['scale']=False 
+      try:
+        parameters['rotate']=data["rotate"]
+      except KeyError:
+        parameters['rotate']=0    
+
+    else:
+      print("Activation maximization configuration file not found.")
+      print("Using default values.")
+      parameters['actv_max_input_size']=(224, 224, 3)
+      parameters['noise']=True
+      parameters['step_size']=1
+      parameters['actv_max_iters']=100
+      parameters['blur_every']=4
+      parameters['blur_width']=1
+      parameters['lap_norm_levels']=5
+      parameters['tv_lambda']=0
+      parameters['tv_beta']=2.0
+      parameters['jitter']=0
+      parameters['scale']=False
+      parameters['rotate']=0
+    return parameters
 
 def training(loss_op, optimizer_imp):
     """Sets up the training Ops.
@@ -255,7 +335,7 @@ def run_training(opt_values):
         with tf.variable_scope("model"):
             with tf.variable_scope("architecture"):
                 architecture_output = architecture_imp.prediction(architecture_input, training=True)
-            loss_op = loss_imp.evaluate(architecture_output, target_output)
+            loss_op = loss_imp.evaluate(architecture_input, architecture_output, target_output)
         train_op, global_step = training(loss_op, optimizer_imp)
 
         if loss_imp.trainable():
@@ -269,7 +349,7 @@ def run_training(opt_values):
             with tf.variable_scope("architecture", reuse=True):
                 architecture_output_test = architecture_imp.prediction(architecture_input_test,
                                                                    training=False) # TODO: false?
-            loss_op_test = loss_imp.evaluate(architecture_output_test, target_output_test)
+            loss_op_test = loss_imp.evaluate(architecture_input_test, architecture_output_test, target_output_test)
         tf_test_loss = tf.placeholder(tf.float32, shape=(), name="tf_test_loss")
         test_loss = tf.summary.scalar('test_loss', tf_test_loss)
 
@@ -301,7 +381,6 @@ def run_training(opt_values):
         step = sess.run(global_step)
 
         try:
-
             while True:
                 start_time = time.time()
                 sess.run(init)
@@ -312,20 +391,20 @@ def run_training(opt_values):
                 # the list passed to sess.run() and the value tensors
                 # will be returned in the tuple from the call.
 
+                # Warning: Calling the sess.run will advance the dataset
+                # to the next batch.
                 if step % architecture_imp.get_summary_writing_period() == 0:
-                    # Train Discriminator
+                    # Train Discriminator & Generator
                     if loss_imp.trainable():
-                        _ = sess.run([loss_tr])
-                       
-                    # Train Generator
-                    loss_value, _, summary = sess.run([loss_op, train_op, merged])
+                        loss_value, _, _, summary = sess.run([loss_op, loss_tr, train_op, merged])
+                    else:
+                        loss_value, _, summary = sess.run([loss_op, train_op, merged])
                 else:
-                    # Train Discriminator
+                    # Train Discriminator & Generator
                     if loss_imp.trainable():
-                        _ = sess.run([loss_tr])
-                        
-                    # Train Generator
-                    loss_value, _ = sess.run([loss_op, train_op])
+                        loss_value, _, _ = sess.run([loss_op, loss_tr, train_op])
+                    else:
+                        loss_value, _ = sess.run([loss_op, train_op])
                 duration = time.time() - start_time
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     print('Step %d: loss = %.2f (%.3f sec)' % (step, np.mean(loss_value),
@@ -453,8 +532,9 @@ def run_visualization(opt_values):
         # Input and target output pairs.
         architecture_input, target_output = dataset_imp.next_batch_train(0)
 
-        with tf.variable_scope("model"):
-            architecture_output = architecture_imp.prediction(architecture_input, training=True)
+        with tf.variable_scope("model", reuse=True):
+            with tf.variable_scope("architecture", reuse=tf.AUTO_REUSE):
+                architecture_output = architecture_imp.prediction(architecture_input, training=False)
 
         visualize_summary_dir=os.path.join(summary_dir, "Visualize_"+dataset_name)
         visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
@@ -465,7 +545,7 @@ def run_visualization(opt_values):
         # Add ops to save and restore all the variables.
         saver = tf.train.Saver()
         # Add ops to save and restore all the variables.
-        sess = tf.Session()
+        sess = tf.InteractiveSession()
 
         # Initialize the variables (the trained variables and the
         # epoch counter).
@@ -491,7 +571,7 @@ def run_visualization(opt_values):
             layer_avgs=json.load(outfile)
             outfile.close()
 
-        key_list=opt_values['visualize_keys'].split(';')
+        key_list=re.split("[,; ]",opt_values['visualize_layers'])
         for k in key_list:
             layer=architecture_imp.get_layer(k)           
             layer_grid=put_features_on_grid(layer)
@@ -502,8 +582,7 @@ def run_visualization(opt_values):
         try:
 
             while True:
-                summaries = sess.run(layer_summaries)
-                batch_avgs = sess.run(layer_avg_ops)
+                summaries, batch_avgs = sess.run([layer_summaries,layer_avg_ops])
                 for k, avg in zip(key_list, batch_avgs):
                     layer_avgs[k].extend(avg.tolist())
                 for summary in summaries:
@@ -516,7 +595,141 @@ def run_visualization(opt_values):
             with open(json_file_path, 'w') as outfile:
                 json.dump(layer_avgs, outfile)
             
+def run_activation_maximization(opt_values):
+    """
+    Runs the activation maximization of network layers specified by the --visualize_layers parameter
 
+    This function is responsible for instanciating architecture
+
+    Args:
+        opt_values: dictionary containing parameters as keys and arguments as values.
+
+    """
+    # Get architecture name
+    arch_name = opt_values['architecture_name']
+    
+    execution_dir = opt_values["execution_path"]
+    model_dir = os.path.join(execution_dir, "Model")
+
+    summary_dir = os.path.join(execution_dir, "Summary")
+    if not os.path.isdir(summary_dir):
+        os.makedirs(summary_dir)
+
+    # Read activation maximization parameters from configuration file.
+    actv_max_params=load_actv_max_params()
+    # This is the size of the input generated by activation maximization.
+    actv_max_input_size=actv_max_params['actv_max_input_size']
+    # True for random image initialization, false for gray image.
+    noise=actv_max_params['noise']
+    # Activation maximization gradient step size.
+    step_size=actv_max_params['step_size']
+    # Number of activation maximization itertions.
+    actv_max_iters=actv_max_params['actv_max_iters']
+    # Frequency of the blurring operation. 0 means no bluring. 
+    blur_every=actv_max_params['blur_every']
+    # Width of the blurring kernel.
+    blur_width=actv_max_params['blur_width']
+    # Number of levels used in laplacian pyramid gradient normalization.
+    # A 1 level pyramid is equivalent to no normalization.
+    lap_norm_levels=actv_max_params['lap_norm_levels']
+    # Controls the influence of the total variation norm in the optimization.
+    tv_lambda=actv_max_params['tv_lambda']
+    # The exponent used to calculate the total variation norm.
+    tv_beta=actv_max_params['tv_lambda']
+    # Maximum jitter (translation) regularization in pixels
+    jitter=actv_max_params['jitter']
+    # True for scale regularization
+    scale=actv_max_params['scale']
+    # Maximum rotation regularization angle in degrees
+    rotate=actv_max_params['rotate']
+
+    # Get implementations
+    architecture_imp = utils.get_implementation(architecture.Architecture, arch_name)
+
+    # Tell TensorFlow that the model will be built into the default Graph.
+    graph = tf.Graph()
+    with graph.as_default():
+        architecture_input = tf.placeholder(tf.float32, shape=(1,)+actv_max_input_size)
+
+        with tf.variable_scope("model", reuse=True):
+            with tf.variable_scope("architecture", reuse=tf.AUTO_REUSE):
+                architecture_output = architecture_imp.prediction(architecture_input, training=False)
+
+        # Generates the name of the folder where the tensorboard summaries will be saved.
+        summary_name="ActivationMaximization"
+        if(noise):
+          summary_name+="Noise"
+        else:
+          summary_name+="NoNoise"
+        summary_name+="Step"+str(step_size)
+        summary_name+="Iters"+str(actv_max_iters)
+        summary_name+="BlurEvery"+str(blur_every)
+        summary_name+="BlurWidth"+str(blur_width)
+        summary_name+="LapNorm"+str(lap_norm_levels)
+        summary_name+="TVlambda"+str(tv_lambda)
+        summary_name+="TVbeta"+str(tv_beta)
+        summary_name+="Jitter"+str(jitter)
+        if(scale):
+          summary_name+="Scaling"
+        else:
+          summary_name+="NoScaling"
+        summary_name+="Rotation"+str(rotate)
+
+
+
+        visualize_summary_dir=os.path.join(summary_dir, summary_name)
+        visualize_writer = tf.summary.FileWriter(visualize_summary_dir)
+
+        # # The op for initializing the variables.
+        init_op = tf.group(tf.global_variables_initializer(),
+                           tf.local_variables_initializer())
+        # Add ops to save and restore all the variables.
+        saver = tf.train.Saver()
+        # Add ops to save and restore all the variables.
+        sess = tf.InteractiveSession()
+
+        # Initialize the variables (the trained variables and the
+        # epoch counter).
+        sess.run(init_op)
+
+        # Restore variables from disk.
+        model_file_path = os.path.join(model_dir, "model.ckpt")
+        saver.restore(sess, model_file_path)
+        print("Model restored.")
+
+        tensorboard_command=get_tensorboard_command(visualize=visualize_summary_dir)
+        print("To run tensorboard, execute the following command in the terminal:")
+        print(tensorboard_command)
+
+        key_list=re.split("[,; ]",opt_values['visualize_layers'])
+
+        try:
+            print("Running Activation Maximization")
+            # Every layer specified with --visualize_layers.
+            for key in key_list:
+              print("Layer "+key)	
+              ft=architecture_imp.get_layer(key)
+              n_channels=ft.get_shape()[3]
+              # Initializes the grid.
+              opt_grid=np.empty((1,)+actv_max_input_size+(n_channels,))
+              # Every channel.
+              for ch in range(n_channels):
+                print("Channel "+str(ch))
+                opt_output=maximize_activation(actv_max_input_size, architecture_input,ft[:,:,:,ch],noise,step_size,
+                                               actv_max_iters,blur_every,blur_width,lap_norm_levels,tv_lambda,tv_beta,
+                                               jitter, scale, rotate)
+                opt_output -= opt_output.min()
+                opt_output *= (255/(opt_output.max()+0.0001))
+                opt_grid[0,:,:,:,ch]=opt_output
+              # Saves a grid containing the results of all channels of a layers in the summaries.
+              opt_grid_name=key+"_maximization"
+              opt_grid_img=put_grads_on_grid(opt_grid.astype(np.float32))
+              opt_grid_summary=tf.summary.image(opt_grid_name, opt_grid_img)
+              opt_grid_summary_str=sess.run(opt_grid_summary)
+              visualize_writer.add_summary(opt_grid_summary_str,0)
+
+        finally:
+            sess.close()                       
 
         
 
@@ -533,6 +746,8 @@ def main(opt_values):
         run_dataset_manager(opt_values)
     elif execution_mode == 'visualize':
         run_visualization(opt_values)
+    elif execution_mode == 'activation_maximization':
+        run_activation_maximization(opt_values)
 
 if __name__ == "__main__":
     OPT_VALUES = process_args(sys.argv[1:])

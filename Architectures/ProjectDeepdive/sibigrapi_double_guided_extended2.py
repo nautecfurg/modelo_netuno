@@ -3,7 +3,7 @@ import tensorflow as tf
 import Architectures.Layers.inception_resnet_a as ira
 import Architectures.Layers.inception_resnet_b as irb
 import Architectures.Layers.inception_resnet_c as irc
-import Architectures.Layers.guidedfilter_color_trainable_test as gct
+import Architectures.Layers.guidedfilter_color_trainable as gct
 
 class SibigrapiDoubleGuidedExtended2(architecture.Architecture):
     def __init__(self):
@@ -92,7 +92,7 @@ class SibigrapiDoubleGuidedExtended2(architecture.Architecture):
             
             with tf.variable_scope("guided",reuse=reuse):
                 conv4_1_layer =tf.expand_dims(conv4_1[:,:,:,i], -1) 
-                guided4_1_layer = gct.guidedfilter_color_treinable(sample, conv4_1_layer, r=20, eps=10**-6)
+                guided4_1_layer = gct.guidedfilter_color_treinable(sample, conv4_1_layer, r=20, eps=10**-3)
                 guided4_1_list.append(guided4_1_layer)
 
         guided4_1 = tf.concat(guided4_1_list, 3)
@@ -112,7 +112,7 @@ class SibigrapiDoubleGuidedExtended2(architecture.Architecture):
             
             with tf.variable_scope("guided2",reuse=reuse):
                 conv4_2_layer =tf.expand_dims(conv4_2[:,:,:,i], -1) 
-                guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-6)
+                guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-3)
                 guided4_2_list.append(guided4_2_layer)
 
         guided4_2 = tf.concat(guided4_2_list, 3)

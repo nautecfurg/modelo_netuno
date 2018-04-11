@@ -1,0 +1,14 @@
+{
+"actv_max_input_size": "224,224,3",
+"noise": true,
+"step_size": 0.1,
+"actv_max_iters": 100,
+"blur_every": 4,
+"blur_width": 1,
+"lap_norm_levels": 5,
+"tv_lambda": 0,
+"tv_beta": 2.0,
+"jitter": 0,
+"scale":false,
+"rotate": 0
+}
