@@ -118,7 +118,7 @@ class GuidedNet(architecture.Architecture):
         
 
         guided4_1 = guided_filter(sample, conv4_1, 3)
-        conv4_2 = tf.contrib.layers.conv2d(inputs=decode4, num_outputs=3, kernel_size=[3, 3],
+        conv4_2 = tf.contrib.layers.conv2d(inputs=guided, num_outputs=3, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
