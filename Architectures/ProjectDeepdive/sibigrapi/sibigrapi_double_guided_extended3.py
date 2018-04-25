@@ -130,11 +130,7 @@ class SibigrapiDoubleGuidedExtended3(architecture.Architecture):
             
             with tf.variable_scope("guided2",reuse=reuse):
                 conv4_2_layer =tf.expand_dims(conv4_2[:,:,:,i], -1) 
-<<<<<<< HEAD
                 guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-4)
-=======
-                guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-3)
->>>>>>> eba5fadb58cb5b0d37a68d7b6c68d9a547ad421b
                 guided4_2_list.append(guided4_2_layer)
 
         guided4_2 = tf.concat(guided4_2_list, 3)

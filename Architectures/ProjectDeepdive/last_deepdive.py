@@ -1,10 +1,6 @@
 import architecture
 import tensorflow as tf
-import Architectures.Layers.inception_resnet_a as ira
-import Architectures.Layers.inception_resnet_b as irb
-import Architectures.Layers.inception_resnet_c as irc
-import Architectures.Layers.guidedfilter_color_trainable as gct
-from guided_filter_tf.guided_filter import fast_guided_filter as gf
+import Architectures.Layers.faster_guided_filter as gf
 
 class LastDeepDive(architecture.Architecture):
     def __init__(self):
@@ -16,6 +12,9 @@ class LastDeepDive(architecture.Architecture):
 
     def prediction(self, sample, training=False):
         " Coarse-scale Network"
+        subsampling_ratio = 4
+        lr_shape = [int(224/subsampling_ratio), int(224/subsampling_ratio)]
+        lr_sample = tf.image.resize_images(sample, lr_shape)
         normalizer_params = {'is_training':training, 'center':True,
                              'updates_collections':None, 'scale':True}
         nc = 16
@@ -100,45 +99,20 @@ class LastDeepDive(architecture.Architecture):
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        """
-        guided4_1_list = []
-        for i in range(3):
-            if i == 0:
-                reuse = None
-            else:
-                reuse = True
-            
-            with tf.variable_scope("guided",reuse=reuse):
-                conv4_1_layer =tf.expand_dims(conv4_1[:,:,:,i], -1) 
-                guided4_1_layer = gct.guidedfilter_color_treinable(sample, conv4_1_layer, r=20, eps=10**-4)
-                guided4_1_list.append(guided4_1_layer)
-
-        guided4_1 = tf.concat(guided4_1_list, 3)
-        """
-        guided4_1 = guided4_1 = gf(sample, conv4_1, r=20, eps=10**-4)
+        lr_conv4_1 = tf.image.resize_images(conv4_1, lr_shape)
+        guided4_1 = gf.fast_guided_filter(lr_sample, lr_conv4_1, sample,
+                                          r=20, eps=10**-4, nhwc=True)
 
         conv4_2 = tf.contrib.layers.conv2d(inputs=decode4, num_outputs=3, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
-        """
-        guided4_2_list = []
-        for i in range(3):
-            if i == 0:
-                reuse = None
-            else:
-                reuse = True
-            
-            with tf.variable_scope("guided2",reuse=reuse):
-                conv4_2_layer =tf.expand_dims(conv4_2[:,:,:,i], -1) 
-                guided4_2_layer = gct.guidedfilter_color_treinable(sample, conv4_2_layer, r=20, eps=10**-4)
-                guided4_2_list.append(guided4_2_layer)
 
-        guided4_2 = tf.concat(guided4_2_list, 3)
-        """
-        guided4_2 = gf(sample, conv4_2, r=20, eps=10**-4)
-
+        lr_conv4_2 = tf.image.resize_images(conv4_2, lr_shape)
+        guided4_2 = gf.fast_guided_filter(lr_sample, lr_conv4_2, sample,
+                                          r=20, eps=10**-4, nhwc=True)
+        
         guided4 = tf.concat([guided4_2*sample,guided4_1,sample],3)
 
         conv5 = tf.contrib.layers.conv2d(inputs=guided4, num_outputs=3, kernel_size=[1, 1],

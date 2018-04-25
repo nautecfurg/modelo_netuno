@@ -1,6 +1,8 @@
 import tensorflow as tf
+import time
 
 def guidedfilter(I, p, r, eps):
+    start_time = time.time()
     """
     Summary:
         This function is a implementation of guided filter for tensorflow.
@@ -17,7 +19,6 @@ def guidedfilter(I, p, r, eps):
     """
 
     eps_tensor = tf.constant(eps)
-    depth = I.shape[3]
     mean_I = tf.nn.pool(input=I,
         window_shape=[2*r+1, 2*r+1],
         pooling_type="AVG",
@@ -30,18 +31,17 @@ def guidedfilter(I, p, r, eps):
         window_shape=[2*r+1, 2*r+1],
         pooling_type="AVG",
         padding="SAME")
-    
-    cov_Ip = tf.subtract(mean_Ip, tf.multiply(mean_I, mean_p))
+    cov_Ip = tf.subtract(mean_Ip, (mean_I*mean_p))
 
-    mean_II = tf.nn.pool(input=tf.multiply(I, I),
+    mean_II = tf.nn.pool(input=(I*I),
         window_shape=[2*r+1, 2*r+1],
         pooling_type="AVG",
         padding="SAME")
     
-    var_I = tf.subtract(mean_II, tf.multiply(mean_I, mean_I))
+    var_I = tf.subtract(mean_II, (mean_I*mean_I))
 
-    a = tf.divide(cov_Ip, var_I + eps_tensor)
-    b = tf.subtract(mean_p, tf.multiply(a, mean_I))
+    a = tf.divide(cov_Ip, tf.add(var_I, eps_tensor))
+    b = tf.subtract(mean_p, (a*mean_I))
 
     mean_a = tf.nn.pool(input=a,
         window_shape=[2*r+1, 2*r+1],
@@ -51,6 +51,6 @@ def guidedfilter(I, p, r, eps):
         window_shape=[2*r+1, 2*r+1],
         pooling_type="AVG",
         padding="SAME")
-
-    q = tf.multiply(mean_a, tf.add(I, mean_b))
-    
+    q = tf.add((mean_a*I), mean_b)
+    duration = time.time() - start_time
+    return q

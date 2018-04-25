@@ -1,24 +1,6 @@
 import architecture
 import tensorflow as tf
-import Architectures.Layers.inception_resnet_a as ira
-import Architectures.Layers.inception_resnet_b as irb
-import Architectures.Layers.inception_resnet_c as irc
-import Architectures.Layers.guidedfilter_grayscale as guided
-
-def guided_filter(I, p, feature_maps):
-    guided_list = []
-    for i in range(feature_maps):
-        if i == 0:
-            reuse = None
-        else:
-            reuse = True
-                
-        with tf.variable_scope("guided",reuse=reuse):
-            p_layer = tf.expand_dims(p[:,:,:,i], -1) 
-            I_layer = tf.expand_dims(I[:,:,:,i], -1)
-            guided_layer = guided.guidedfilter(I_layer, p_layer, r=20, eps=10**-4)
-            guided_list.append(guided_layer)
-    return tf.concat(guided_list, 3)
+import Architectures.Layers.faster_guided_filter as gf
 
 
 class GuidedNet(architecture.Architecture):
@@ -31,6 +13,9 @@ class GuidedNet(architecture.Architecture):
 
     def prediction(self, sample, training=False):
         " Coarse-scale Network"
+        subsampling_ratio = 4
+        lr_shape = [int(224/subsampling_ratio), int(224/subsampling_ratio)]
+        lr_sample = tf.image.resize_images(sample, lr_shape)
         normalizer_params = {'is_training':training, 'center':True,
                              'updates_collections':None, 'scale':True}
         nc = 16
@@ -102,13 +87,15 @@ class GuidedNet(architecture.Architecture):
                                                     normalizer_fn=tf.contrib.layers.batch_norm,
                                                     normalizer_params=normalizer_params,
                                                     activation_fn=tf.nn.relu)
-        guided = tf.concat([guided_filter(conv1, decode4, nc), decode4], 3)
+        #guided = tf.concat([guided_filter(conv1, decode4, nc), decode4], 3)
+
+        lr_conv1 = tf.image.resize_images(conv1, lr_shape)
+        lr_decode4 = tf.image.resize_images(decode4, lr_shape)
+        guided = gf.guided_filter(lr_conv1, lr_decode4, r=20, eps=10**-4)
+        guided = gf.fast_guided_filter(lr_conv1, lr_decode4, conv1,
+                                        r=20, eps=10**-4, nhwc=True)
         
         print(guided)
-
-        # module_a = ira.inception_resnet_a(decode4, normalizer_params)
-        # module_b = irb.inception_resnet_b(module_a, normalizer_params)
-        # module_c = irc.inception_resnet_c(module_b, normalizer_params)
 
         conv4_1 = tf.contrib.layers.conv2d(inputs=guided, num_outputs=3, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
@@ -117,15 +104,23 @@ class GuidedNet(architecture.Architecture):
                                          activation_fn=tf.nn.relu)
         
 
-        guided4_1 = guided_filter(sample, conv4_1, 3)
+        #guided4_1 = guided_filter(sample, conv4_1, 3)
+        #guided4_1 = gf.guided_filter(sample, conv4_1, r=20, eps=10**-4)
+        lr_conv4_1 = tf.image.resize_images(conv4_1, lr_shape)
+        guided4_1 = gf.fast_guided_filter(lr_sample, lr_conv4_1, sample,
+                                          r=20, eps=10**-4, nhwc=True)
         conv4_2 = tf.contrib.layers.conv2d(inputs=guided, num_outputs=3, kernel_size=[3, 3],
                                          stride=[1, 1], padding='SAME',
                                          normalizer_fn=tf.contrib.layers.batch_norm,
                                          normalizer_params=normalizer_params,
                                          activation_fn=tf.nn.relu)
 
-        guided4_2 = guided_filter(sample, conv4_2, 3)
-
+        #guided4_2 = guided_filter(sample, conv4_2, 3)
+        lr_conv4_2 = tf.image.resize_images(conv4_2, lr_shape)
+        #guided4_2 = gf.guided_filter(sample, conv4_2, r=20, eps=10**-4)
+        guided4_2 = gf.fast_guided_filter(lr_sample, lr_conv4_2, sample,
+                                          r=20, eps=10**-4, nhwc=True)
+        
         guided4 = tf.concat([guided4_2*sample,guided4_1,sample],3)
 
         conv5 = tf.contrib.layers.conv2d(inputs=guided4, num_outputs=3, kernel_size=[1, 1],
@@ -136,7 +131,7 @@ class GuidedNet(architecture.Architecture):
         brelu = tf.minimum(conv5,1)
 
         tf.summary.image("architecture_output", brelu)
-        return brelu
+        return brelu, conv1, guided
 
 
 
