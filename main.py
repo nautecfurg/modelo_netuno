@@ -406,7 +406,7 @@ def run_training(opt_values):
                     else:
                         loss_value, _ = sess.run([loss_op, train_op])
                 duration = time.time() - start_time
-                print (duration)
+                #print (duration)
                 if step % architecture_imp.get_summary_writing_period() == 0:
                     print('Step %d: loss = %.2f (%.3f sec)' % (step, np.mean(loss_value),
                                                                duration))

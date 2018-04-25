@@ -131,8 +131,7 @@ class GuidedNet(architecture.Architecture):
         brelu = tf.minimum(conv5,1)
 
         tf.summary.image("architecture_output", brelu)
-        return brelu, conv1, guided
-
+        return brelu
 
 
     def get_validation_period(self):
