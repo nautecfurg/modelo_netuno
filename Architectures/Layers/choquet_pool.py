@@ -24,7 +24,7 @@ def fast_choquet_pooling(images, ksizes, strides, rates, padding, q=0.5):
 
 def fast_choquet_pooling_trainable(images, ksizes, strides, rates, padding):
   #funcao mais rapida, mas sem possibilidade de mudar a metrica fuzzy
-  q=tf.get_variable(shape=(), dtype=tf.float32, trainable=True)
+  q=tf.Variable(initial_value=tf.random_uniform(shape=(), dtype=tf.float64), dtype=tf.float64, trainable=True)
   patch_depth=ksizes[0]*ksizes[1]*ksizes[2]*ksizes[3]
   patches=tf.extract_image_patches(images=images, ksizes=ksizes, strides=strides, rates=rates, padding=padding)  
   sh=tf.shape(patches)

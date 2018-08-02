@@ -70,7 +70,7 @@ class DehazenetChoquet(architecture.Architecture):
         self.layers_dict["max_pool"]=max_pool
 
         #choq_pool = choquet_pooling(conv2a, [1,7,7,1], [1,1,1,1], [1,1,1,1], 'SAME', MF)
-        choq_pool = fast_choquet_pooling(conv2a, [1,7,7,1], [1,1,1,1], [1,1,1,1], 'SAME')
+        choq_pool = fast_choquet_pooling_trainable(tf.nn.relu(conv2a), [1,7,7,1], [1,1,1,1], [1,1,1,1], 'SAME')
         self.layers_dict["choq_pool"]=choq_pool
 
         pool2 = tf.concat([max_pool, choq_pool], axis=3)
