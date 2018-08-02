@@ -22,6 +22,25 @@ def fast_choquet_pooling(images, ksizes, strides, rates, padding, q=0.5):
   S=p_diff*f 
   return tf.reduce_sum(S, axis=4)
 
+def fast_choquet_pooling_trainable(images, ksizes, strides, rates, padding):
+  #funcao mais rapida, mas sem possibilidade de mudar a metrica fuzzy
+  q=tf.get_variable(shape=(), dtype=tf.float32, trainable=True)
+  patch_depth=ksizes[0]*ksizes[1]*ksizes[2]*ksizes[3]
+  patches=tf.extract_image_patches(images=images, ksizes=ksizes, strides=strides, rates=rates, padding=padding)  
+  sh=tf.shape(patches)
+  n_channels=images.shape[3]
+  patches=tf.reshape(patches,[sh[0],sh[1],sh[2],patch_depth,n_channels])
+  patches=tf.transpose(patches, [0,1,2,4,3])
+  p_sorted,_=tf.nn.top_k(patches, patch_depth, sorted=True)
+  #aumenta o peso do maior valor da janela em 20%
+  #p_sorted=p_sorted*tf.pad(tf.constant([1.2]), [[0,patch_depth-1]], constant_values=1.0)
+  p_sorted=p_sorted[:,:,:,:,::-1]
+  p_diff=p_sorted-tf.pad(p_sorted, [[0,0],[0,0],[0,0],[0,0],[1,0]])[:,:,:,:,:-1]
+  f=tf.range(start=(tf.shape(p_sorted)[4]), limit=0, delta=-1)
+  f=tf.cast(tf.pow(tf.truediv(f,patch_depth),q),tf.float32)
+  S=p_diff*f 
+  return tf.reduce_sum(S, axis=4)
+
 def choquet_pooling(images, ksizes, strides, rates, padding, fuzzy):
   patch_depth=ksizes[0]*ksizes[1]*ksizes[2]*ksizes[3]
   patches=tf.extract_image_patches(images=images, ksizes=ksizes, strides=strides, rates=rates, padding=padding)  
